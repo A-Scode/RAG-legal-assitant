@@ -1,0 +1,15 @@
+{
+    "name": "backend",
+    "version": "0.0.0",
+    "scripts": {
+        "dev": "uv run python manage.py runserver",
+        "start": "uv run python manage.py runserver",
+        "build": "uv run python manage.py collectstatic --noinput",
+        "migrate": "uv run python manage.py migrate",
+        "createsuperuser": "uv run python manage.py createsuperuser",
+        "makemigrations": "uv run python manage.py makemigrations",
+        "install": "uv sync",
+        "type-check": "uv run pyright",
+        "test": "uv run python manage.py test"
+    }
+}
