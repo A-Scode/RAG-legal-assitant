@@ -43,10 +43,7 @@ function RouteComponent() {
 
 
   const history = [
-    { id: 1, title: "Legal Advice on Contracts", date: "2 mins ago" },
     { id: 2, title: "Drafting NDA for Startup", date: "1 hour ago" },
-    { id: 3, title: "Employment Law Query", date: "Yesterday" },
-    { id: 4, title: "Property Dispute Resolution", date: "2 days ago" },
   ]
 
 
@@ -179,10 +176,6 @@ function RouteComponent() {
               <h2 className="text-sm font-semibold truncate leading-none mb-1">
                 NDA Drafting
               </h2>
-              <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">AI Online</span>
-              </div>
             </div>
           </div>
 

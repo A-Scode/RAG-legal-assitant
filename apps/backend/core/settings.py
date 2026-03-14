@@ -31,6 +31,8 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    "unfold",
+    "unfold.contrib.filters",
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -115,3 +117,14 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+UNFOLD = {
+    "SITE_TITLE": "Legal Assistant Admin",
+    "SITE_HEADER": "Legal Assistant",
+    "SITE_INDEX_TITLE": "Legal Assistant",
+    "SIDEBAR": {
+        "show_search": True,
+        "navigation": [
+        ],
+    },
+}
