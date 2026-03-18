@@ -1,8 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-import uuid
+import uuid6
 
-from django_mongodb_backend.fields import ArrayField,ObjectIdAutoField , EmbeddedModelField
+from django_mongodb_backend.fields import ArrayField,ObjectIdAutoField , EmbeddedModelArrayField ,EmbeddedModelField
 from django_mongodb_backend.models import EmbeddedModel
 class User(AbstractUser):
     state = models.CharField(max_length=100)
@@ -10,7 +10,7 @@ class User(AbstractUser):
     occupation = models.CharField(max_length=100)
     
 class ChatSession(models.Model):
-    session_id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
+    session_id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -20,7 +20,7 @@ class ChatSession(models.Model):
         return self.title
     
 class ChatMessage(models.Model):
-    msg_id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
+    msg_id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
     session = models.ForeignKey(ChatSession, on_delete=models.CASCADE)
     role = models.CharField(max_length=100)
     content = models.TextField()
@@ -37,7 +37,7 @@ class Document(models.Model):
         IN_PROGRESS = 'in-progress'
         INDEXED = 'Indexed'
     
-    doc_id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
+    doc_id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
     title = models.CharField(max_length=100)
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -67,6 +67,7 @@ class Document(models.Model):
 
 
 class PageNode(EmbeddedModel):
+    id = ObjectIdAutoField(primary_key=True)
     node_id =  models.CharField(max_length=50)
     title = models.CharField(max_length=500)
     summary = models.TextField(blank=True , null=True)
@@ -74,12 +75,12 @@ class PageNode(EmbeddedModel):
     content = models.TextField(blank=True , null=True)
     page_index = models.IntegerField(blank=True , null=True)
 
-    nodes = ArrayField(PageNode , blank=True , null=True)
+    nodes = EmbeddedModelArrayField('self',  blank=True , null=True)
     
 
 class DocTree(models.Model):
     tree_id = ObjectIdAutoField(primary_key=True)
-    doc_tree = ArrayField(PageNode, null=False)
+    doc_tree = EmbeddedModelArrayField(PageNode, null=False)
     
     
     

@@ -10,4 +10,5 @@ dependencies = [
     "django-unfold>=0.83.1",
     "psycopg2-binary>=2.9.11",
     "python-dotenv>=1.2.2",
+    "uuid6>=2025.0.1",
 ]

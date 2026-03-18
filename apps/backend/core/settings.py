@@ -39,6 +39,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     "unfold",
     "unfold.contrib.filters",
+    'core',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -76,6 +77,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
+AUTH_USER_MODEL = 'core.User'
+
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
@@ -91,9 +94,10 @@ DATABASES = {
     },
     'tree_db': {
         'ENGINE': 'django_mongodb_backend',
-        'NAME': 'legal_assistant',
+        'NAME': os.getenv('MONGODB_NAME'),
         'HOST': os.getenv('MONGODB_HOST'),
-        'PORT': os.getenv('MONGODB_PORT')
+        'PORT': os.getenv('MONGODB_PORT'),
+        'AUTH_SOURCE': 'admin',
     }
 }
 
