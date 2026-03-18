@@ -1,12 +1,16 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+import uuid
 
+from django_mongodb_backend.fields import ArrayField,ObjectIdAutoField , EmbeddedModelField
+from django_mongodb_backend.models import EmbeddedModel
 class User(AbstractUser):
     state = models.CharField(max_length=100)
     city = models.CharField(max_length=100)
     occupation = models.CharField(max_length=100)
     
 class ChatSession(models.Model):
+    session_id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -16,6 +20,7 @@ class ChatSession(models.Model):
         return self.title
     
 class ChatMessage(models.Model):
+    msg_id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
     session = models.ForeignKey(ChatSession, on_delete=models.CASCADE)
     role = models.CharField(max_length=100)
     content = models.TextField()
@@ -24,4 +29,57 @@ class ChatMessage(models.Model):
     
     def __str__(self):
         return self.content
+    
+class Document(models.Model):
+
+    class DocumentStatus(models.TextChoices):
+        NOT_INDEXED = 'Not Indexed'
+        IN_PROGRESS = 'in-progress'
+        INDEXED = 'Indexed'
+    
+    doc_id = models.UUIDField(primary_key=True, default=uuid.uuid7, editable=False)
+    title = models.CharField(max_length=100)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    file_path = models.CharField(max_length=100)
+    page_index_id = models.CharField(max_length=100)
+    page_index_status = models.CharField(max_length=100, choices=DocumentStatus.choices,
+                            default=DocumentStatus.NOT_INDEXED)
+    
+    
+    def __str__(self):
+        return self.title
+
+    def start_indexing(self):
+        self.page_index_status = Document.DocumentStatus.IN_PROGRESS
+        self.save()
+    
+    def complete_indexing(self,tree):
+        self.page_index_status = Document.DocumentStatus.INDEXED
+        self.save()
+
+    @property
+    def doc_tree(self):
+        return DocTree.objects.get(tree_id=self.page_index_id).doc_tree
+    
+
+
+
+class PageNode(EmbeddedModel):
+    node_id =  models.CharField(max_length=50)
+    title = models.CharField(max_length=500)
+    summary = models.TextField(blank=True , null=True)
+    prefix_summary = models.TextField(blank=True , null=True)
+    content = models.TextField(blank=True , null=True)
+    page_index = models.IntegerField(blank=True , null=True)
+
+    nodes = ArrayField(PageNode , blank=True , null=True)
+    
+
+class DocTree(models.Model):
+    tree_id = ObjectIdAutoField(primary_key=True)
+    doc_tree = ArrayField(PageNode, null=False)
+    
+    
     
