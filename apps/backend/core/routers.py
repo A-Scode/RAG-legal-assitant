@@ -14,7 +14,6 @@ class DBRouter:
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):
         if db == 'tree_db':
-            print(model_name , db )
             return model_name in self.mongo_models
 
         if db == 'default':

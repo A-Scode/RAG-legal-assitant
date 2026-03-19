@@ -1,9 +1,14 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 import uuid6
+from .schemas import PageNodeSchema
 
 from django_mongodb_backend.fields import ArrayField,ObjectIdAutoField , EmbeddedModelArrayField ,EmbeddedModelField
 from django_mongodb_backend.models import EmbeddedModel
+from django_pydantic_field import SchemaField
+from typing import List , Optional
+
+
 class User(AbstractUser):
     state = models.CharField(max_length=100)
     city = models.CharField(max_length=100)
@@ -62,25 +67,13 @@ class Document(models.Model):
     @property
     def doc_tree(self):
         return DocTree.objects.get(tree_id=self.page_index_id).doc_tree
-    
 
 
 
-class PageNode(EmbeddedModel):
-    id = ObjectIdAutoField(primary_key=True)
-    node_id =  models.CharField(max_length=50)
-    title = models.CharField(max_length=500)
-    summary = models.TextField(blank=True , null=True)
-    prefix_summary = models.TextField(blank=True , null=True)
-    content = models.TextField(blank=True , null=True)
-    page_index = models.IntegerField(blank=True , null=True)
-
-    nodes = EmbeddedModelArrayField('self',  blank=True , null=True)
-    
 
 class DocTree(models.Model):
     tree_id = ObjectIdAutoField(primary_key=True)
-    doc_tree = EmbeddedModelArrayField(PageNode, null=False)
+    doc_tree = SchemaField(List[PageNodeSchema], null=False)
     
     
     
