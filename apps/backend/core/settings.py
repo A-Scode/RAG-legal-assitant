@@ -11,6 +11,12 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
+import os
+
+load_dotenv(".env.local")
+
+# print(os.getenv('POSTGRES_USER'))
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -33,6 +39,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     "unfold",
     "unfold.contrib.filters",
+    'core',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -70,14 +77,27 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
+AUTH_USER_MODEL = 'core.User'
+
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_DB'),
+        'USER': os.getenv('POSTGRES_USER'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
+        'HOST': os.getenv('POSTGRES_HOST'),
+        'PORT': os.getenv('POSTGRES_PORT')
+    },
+    'tree_db': {
+        'ENGINE': 'django_mongodb_backend',
+        'NAME': os.getenv('MONGODB_NAME'),
+        'HOST': os.getenv('MONGODB_HOST'),
+        'PORT': os.getenv('MONGODB_PORT'),
+        'AUTH_SOURCE': 'admin',
     }
 }
 
@@ -128,3 +148,5 @@ UNFOLD = {
         ],
     },
 }
+
+DATABASE_ROUTERS = ['core.routers.DBRouter']
