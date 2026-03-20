@@ -26,6 +26,7 @@ export const Route = createFileRoute('/app/register')({
 const registerSchema = z
   .object({
     name: z.string().min(2, "Name must be at least 2 characters."),
+    username: z.string().min(3, "Username must be at least 3 characters."),
     email: z.string().email("Invalid email address."),
     password: z
       .string()
@@ -42,6 +43,7 @@ function RouteComponent() {
   const registerForm = useForm({
     defaultValues: {
       name: "",
+      username: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -90,6 +92,29 @@ function RouteComponent() {
                         aria-invalid={isInvalid}
                         placeholder="Enter Name"
                         autoComplete="name"
+                      />
+                      {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                    </Field>
+                  )
+                }}
+              />
+              <registerForm.Field
+                name="username"
+                children={(field) => {
+                  const isInvalid =
+                    field.state.meta.isTouched && !field.state.meta.isValid
+                  return (
+                    <Field data-invalid={isInvalid}>
+                      <FieldLabel htmlFor={field.name}>Username</FieldLabel>
+                      <Input
+                        id={field.name}
+                        name={field.name}
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        aria-invalid={isInvalid}
+                        placeholder="Choose Username"
+                        autoComplete="username"
                       />
                       {isInvalid && <FieldError errors={field.state.meta.errors} />}
                     </Field>

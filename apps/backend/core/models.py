@@ -34,6 +34,8 @@ class ChatMessage(models.Model):
     
     def __str__(self):
         return self.content
+
+    
     
 class Document(models.Model):
 
@@ -77,3 +79,7 @@ class DocTree(models.Model):
     
     
     
+
+class DocumentRefered(models.Model):
+    message = models.ForeignKey(ChatMessage, on_delete=models.CASCADE)
+    document = models.ForeignKey(Document, on_delete=models.CASCADE)
