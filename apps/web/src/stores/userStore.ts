@@ -7,7 +7,7 @@ interface UserState {
 
 export const useUserStore = create<UserState, [["zustand/persist", UserState]]>(
   persist(
-    (set) => ({
+    () => ({
     }),
     {
       name: "user",

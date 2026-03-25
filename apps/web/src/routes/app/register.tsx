@@ -25,7 +25,8 @@ export const Route = createFileRoute('/app/register')({
 
 const registerSchema = z
   .object({
-    name: z.string().min(2, "Name must be at least 2 characters."),
+    first_name: z.string().min(2, "First name must be at least 2 characters."),
+    last_name: z.string().min(2, "Last name must be at least 2 characters."),
     username: z.string().min(3, "Username must be at least 3 characters."),
     email: z.string().email("Invalid email address."),
     password: z
@@ -42,7 +43,8 @@ const registerSchema = z
 function RouteComponent() {
   const registerForm = useForm({
     defaultValues: {
-      name: "",
+      first_name: "",
+      last_name: "",
       username: "",
       email: "",
       password: "",
@@ -75,29 +77,54 @@ function RouteComponent() {
         >
           <CardContent>
             <FieldGroup className="gap-4">
-              <registerForm.Field
-                name="name"
-                children={(field) => {
-                  const isInvalid =
-                    field.state.meta.isTouched && !field.state.meta.isValid
-                  return (
-                    <Field data-invalid={isInvalid}>
-                      <FieldLabel htmlFor={field.name}>Name</FieldLabel>
-                      <Input
-                        id={field.name}
-                        name={field.name}
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        aria-invalid={isInvalid}
-                        placeholder="Enter Name"
-                        autoComplete="name"
-                      />
-                      {isInvalid && <FieldError errors={field.state.meta.errors} />}
-                    </Field>
-                  )
-                }}
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <registerForm.Field
+                  name="first_name"
+                  children={(field) => {
+                    const isInvalid =
+                      field.state.meta.isTouched && !field.state.meta.isValid
+                    return (
+                      <Field data-invalid={isInvalid}>
+                        <FieldLabel htmlFor={field.name}>First Name</FieldLabel>
+                        <Input
+                          id={field.name}
+                          name={field.name}
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          aria-invalid={isInvalid}
+                          placeholder="First Name"
+                          autoComplete="given-name"
+                        />
+                        {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                      </Field>
+                    )
+                  }}
+                />
+                <registerForm.Field
+                  name="last_name"
+                  children={(field) => {
+                    const isInvalid =
+                      field.state.meta.isTouched && !field.state.meta.isValid
+                    return (
+                      <Field data-invalid={isInvalid}>
+                        <FieldLabel htmlFor={field.name}>Last Name</FieldLabel>
+                        <Input
+                          id={field.name}
+                          name={field.name}
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          aria-invalid={isInvalid}
+                          placeholder="Last Name"
+                          autoComplete="family-name"
+                        />
+                        {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                      </Field>
+                    )
+                  }}
+                />
+              </div>
               <registerForm.Field
                 name="username"
                 children={(field) => {

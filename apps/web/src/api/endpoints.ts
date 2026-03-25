@@ -23,7 +23,6 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.log(error);
     if (error.response.status === 401) {
       axios
         .post("token/refresh/", { refresh: useAuthStore.getState().refresh })
@@ -32,7 +31,7 @@ api.interceptors.response.use(
             .getState()
             .setToken(response.data.access, response.data.refresh);
         })
-        .catch((error) => {
+        .catch(() => {
           logout();
           toast.info("Session Expired , Please Login Again");
         });

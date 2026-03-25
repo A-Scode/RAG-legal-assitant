@@ -18,7 +18,6 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { toast } from 'sonner'
 import { useLogin } from '@/hooks/useAuth'
 
 export const Route = createFileRoute('/app/login')({
