@@ -13,6 +13,7 @@ class User(AbstractUser):
     state = models.CharField(max_length=100)
     city = models.CharField(max_length=100)
     occupation = models.CharField(max_length=100)
+    details = models.TextField(null=True, blank=True , max_length=1000)
     
 class ChatSession(models.Model):
     session_id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)

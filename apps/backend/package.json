@@ -11,5 +11,8 @@
         "install": "uv sync",
         "type-check": "uv run pyright",
         "test": "uv run python manage.py test"
+    },
+    "dependencies": {
+        "web": "workspace:*"
     }
 }
