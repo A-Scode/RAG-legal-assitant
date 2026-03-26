@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from datetime import timedelta
+from django.utils import timezone
 import uuid6
 from .schemas import PageNodeSchema
 
@@ -10,9 +12,9 @@ from typing import List , Optional
 
 
 class User(AbstractUser):
-    state = models.CharField(max_length=100)
-    city = models.CharField(max_length=100)
-    occupation = models.CharField(max_length=100)
+    state = models.CharField(max_length=100 , null=True, blank=True)
+    city = models.CharField(max_length=100 , null=True, blank=True)
+    occupation = models.CharField(max_length=100 , null=True, blank=True)
     details = models.TextField(null=True, blank=True , max_length=1000)
     
 class ChatSession(models.Model):
@@ -72,6 +74,14 @@ class Document(models.Model):
         return DocTree.objects.get(tree_id=self.page_index_id).doc_tree
 
 
+class OTP(models.Model):
+    otp = models.CharField(max_length=6)
+    email = models.EmailField()
+    otp_type = models.CharField(max_length=20 , choices=[("forget-password" , "forget-password") , ("register" , "register")])
+    created_at = models.DateTimeField(auto_now_add=True)
+    verified = models.BooleanField(default=False)
+    def is_valid(self):
+        return self.created_at + timedelta(minutes=5) > timezone.now()
 
 
 class DocTree(models.Model):

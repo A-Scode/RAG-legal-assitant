@@ -43,9 +43,10 @@ api.interceptors.response.use(
 export const endpoints = {
   login: (username: string, password: string) =>
     api.post("token/", { username, password }),
+  register: (data: any) => api.post("register/", data),
   refresh: (refresh: string) => api.post("token/refresh/", { refresh }),
   profile: () => api.get("profile/"),
   updateProfile: (data: any) => api.put("profile/", data),
-  register: (data: any) => api.post("register/", data),
-  
+  forgotPassword: (email: string) => api.post("password-reset/", { email }),
+  getOtp: (email: string, otp_type: "register" | "forget-password") => api.post("otp/", { email, otp_type }),
 };

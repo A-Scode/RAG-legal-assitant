@@ -28,11 +28,6 @@ export const Route = createFileRoute('/app/chat/')({
 function RouteComponent() {
   useGetUser();
 
-  // const {  user , setUser } = useUserStore()
-
-  
-
-
   const messages = [
     { role: 'assistant', content: 'Hello! I am your AI Legal Assistant. How can I help you today?' },
     { role: 'user', content: 'What are the key clauses I should include in a standard NDA?' },

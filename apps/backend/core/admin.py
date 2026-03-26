@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User , ChatSession , ChatMessage , Document , DocTree , DocumentRefered
+from .models import User , ChatSession , ChatMessage , Document , DocTree , DocumentRefered , OTP
 from unfold.admin import ModelAdmin , display
 
 @admin.register(User)
@@ -51,3 +51,10 @@ class DocumentReferedAdmin(ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.order_by('message', '-id').distinct('message')
+
+@admin.register(OTP)
+class OTPAdmin(ModelAdmin):
+    list_display = ('email', 'otp', 'otp_type', 'created_at', 'verified')
+    list_filter = ('otp_type', 'created_at', 'verified')
+    search_fields = ('email', 'otp')
+    ordering = ('-created_at',)

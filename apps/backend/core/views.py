@@ -1,7 +1,7 @@
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated , AllowAny
-from .models import User , ChatSession , ChatMessage , Document , DocumentRefered
-from .serializers import UserSerializer , RegisterSerializer , LoginSerializer , ProfileUpdateSerializer
+from .models import User , ChatSession , ChatMessage , Document , DocumentRefered , OTP
+from .serializers import UserSerializer , RegisterSerializer , LoginSerializer , ProfileUpdateSerializer , GetOTPSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
@@ -28,6 +28,18 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
+
+
+class GetOTPView(generics.GenericAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = GetOTPSerializer
+    queryset = OTP.objects.all()
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        otp_data = serializer.save()
+        return Response(otp_data)
 
 
 class LoginView(generics.GenericAPIView):

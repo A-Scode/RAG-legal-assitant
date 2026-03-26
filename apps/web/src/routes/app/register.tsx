@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import * as z from 'zod'
+import { toast } from 'sonner'
 import { useForm } from '@tanstack/react-form'
 import { Button } from "@/components/ui/button"
 import {
@@ -18,6 +19,8 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { useGetOtp, useRegister } from '@/hooks/useAuth'
+import { useState } from 'react'
 
 export const Route = createFileRoute('/app/register')({
   component: RouteComponent,
@@ -34,6 +37,7 @@ const registerSchema = z
       .min(8, "Password must be at least 8 characters.")
       .max(100, "Password must be at most 100 characters."),
     confirmPassword: z.string(),
+    otp: z.string().length(6, "OTP must be 6 digits."),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -41,6 +45,10 @@ const registerSchema = z
   })
 
 function RouteComponent() {
+  const getOtp = useGetOtp()
+  const register = useRegister()
+  const [otpSent, setOtpSent] = useState(false)
+
   const registerForm = useForm({
     defaultValues: {
       first_name: "",
@@ -49,15 +57,27 @@ function RouteComponent() {
       email: "",
       password: "",
       confirmPassword: "",
+      otp: "",
     },
     validators: {
       onSubmit: registerSchema,
     },
     onSubmit: async ({ value }) => {
-      console.log("Register Form submitted:", value)
-      // Send OTP logic here
+      register.mutate(value)
     },
   })
+
+  const handleSendOtp = async () => {
+    const email = registerForm.getFieldValue("email")
+    if (!email || !z.string().email().safeParse(email).success) {
+      toast.error("Please enter a valid email address first")
+      return
+    }
+    
+    getOtp.mutate({ email, otp_type: "register" }, {
+      onSuccess: () => setOtpSent(true)
+    })
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-background to-muted/50 p-4">
@@ -156,16 +176,51 @@ function RouteComponent() {
                   return (
                     <Field data-invalid={isInvalid}>
                       <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+                      <div className="flex gap-2">
+                        <Input
+                          id={field.name}
+                          name={field.name}
+                          type="email"
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          aria-invalid={isInvalid}
+                          placeholder="name@gmail.com"
+                          autoComplete="email"
+                          className="flex-1"
+                        />
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={handleSendOtp}
+                          disabled={getOtp.isPending}
+                        >
+                          {getOtp.isPending ? "Sending..." : otpSent ? "Resend" : "Send OTP"}
+                        </Button>
+                      </div>
+                      {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                    </Field>
+                  )
+                }}
+              />
+              <registerForm.Field
+                name="otp"
+                children={(field) => {
+                  const isInvalid =
+                    field.state.meta.isTouched && !field.state.meta.isValid
+                  return (
+                    <Field data-invalid={isInvalid}>
+                      <FieldLabel htmlFor={field.name}>OTP (6 digits)</FieldLabel>
                       <Input
                         id={field.name}
                         name={field.name}
-                        type="email"
                         value={field.state.value}
                         onBlur={field.handleBlur}
                         onChange={(e) => field.handleChange(e.target.value)}
                         aria-invalid={isInvalid}
-                        placeholder="name@gmail.com"
-                        autoComplete="email"
+                        placeholder={otpSent ? "123456" : "Send OTP first"}
+                        disabled={!otpSent}
+                        maxLength={6}
                       />
                       {isInvalid && <FieldError errors={field.state.meta.errors} />}
                     </Field>
@@ -224,8 +279,8 @@ function RouteComponent() {
             </FieldGroup>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full">
-              Send OTP
+            <Button type="submit" className="w-full" disabled={register.isPending}>
+              {register.isPending ? "Creating Account..." : "Create Account"}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
               Already have an account?{" "}

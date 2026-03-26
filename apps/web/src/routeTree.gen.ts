@@ -12,8 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRegisterRouteImport } from './routes/app/register'
 import { Route as AppLoginRouteImport } from './routes/app/login'
+import { Route as AppForgotPasswordRouteImport } from './routes/app/forgot-password'
+import { Route as AppChatRouteImport } from './routes/app/chat'
 import { Route as AppChatIndexRouteImport } from './routes/app/chat/index'
-import { Route as AppChatChatRouteImport } from './routes/app/chat/_chat'
+import { Route as AppChatChatSessionIdRouteImport } from './routes/app/chat/$chatSessionId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -30,58 +32,89 @@ const AppLoginRoute = AppLoginRouteImport.update({
   path: '/app/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppChatIndexRoute = AppChatIndexRouteImport.update({
-  id: '/app/chat/',
-  path: '/app/chat/',
+const AppForgotPasswordRoute = AppForgotPasswordRouteImport.update({
+  id: '/app/forgot-password',
+  path: '/app/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppChatChatRoute = AppChatChatRouteImport.update({
-  id: '/app/chat/_chat',
+const AppChatRoute = AppChatRouteImport.update({
+  id: '/app/chat',
   path: '/app/chat',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppChatIndexRoute = AppChatIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppChatRoute,
+} as any)
+const AppChatChatSessionIdRoute = AppChatChatSessionIdRouteImport.update({
+  id: '/$chatSessionId',
+  path: '/$chatSessionId',
+  getParentRoute: () => AppChatRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/app/chat': typeof AppChatRouteWithChildren
+  '/app/forgot-password': typeof AppForgotPasswordRoute
   '/app/login': typeof AppLoginRoute
   '/app/register': typeof AppRegisterRoute
-  '/app/chat': typeof AppChatChatRoute
+  '/app/chat/$chatSessionId': typeof AppChatChatSessionIdRoute
   '/app/chat/': typeof AppChatIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/app/forgot-password': typeof AppForgotPasswordRoute
   '/app/login': typeof AppLoginRoute
   '/app/register': typeof AppRegisterRoute
+  '/app/chat/$chatSessionId': typeof AppChatChatSessionIdRoute
   '/app/chat': typeof AppChatIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/app/chat': typeof AppChatRouteWithChildren
+  '/app/forgot-password': typeof AppForgotPasswordRoute
   '/app/login': typeof AppLoginRoute
   '/app/register': typeof AppRegisterRoute
-  '/app/chat/_chat': typeof AppChatChatRoute
+  '/app/chat/$chatSessionId': typeof AppChatChatSessionIdRoute
   '/app/chat/': typeof AppChatIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app/login' | '/app/register' | '/app/chat' | '/app/chat/'
+  fullPaths:
+    | '/'
+    | '/app/chat'
+    | '/app/forgot-password'
+    | '/app/login'
+    | '/app/register'
+    | '/app/chat/$chatSessionId'
+    | '/app/chat/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/app/login' | '/app/register' | '/app/chat'
+  to:
+    | '/'
+    | '/app/forgot-password'
+    | '/app/login'
+    | '/app/register'
+    | '/app/chat/$chatSessionId'
+    | '/app/chat'
   id:
     | '__root__'
     | '/'
+    | '/app/chat'
+    | '/app/forgot-password'
     | '/app/login'
     | '/app/register'
-    | '/app/chat/_chat'
+    | '/app/chat/$chatSessionId'
     | '/app/chat/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppChatRoute: typeof AppChatRouteWithChildren
+  AppForgotPasswordRoute: typeof AppForgotPasswordRoute
   AppLoginRoute: typeof AppLoginRoute
   AppRegisterRoute: typeof AppRegisterRoute
-  AppChatChatRoute: typeof AppChatChatRoute
-  AppChatIndexRoute: typeof AppChatIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -107,29 +140,56 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/app/chat/': {
-      id: '/app/chat/'
-      path: '/app/chat'
-      fullPath: '/app/chat/'
-      preLoaderRoute: typeof AppChatIndexRouteImport
+    '/app/forgot-password': {
+      id: '/app/forgot-password'
+      path: '/app/forgot-password'
+      fullPath: '/app/forgot-password'
+      preLoaderRoute: typeof AppForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/app/chat/_chat': {
-      id: '/app/chat/_chat'
+    '/app/chat': {
+      id: '/app/chat'
       path: '/app/chat'
       fullPath: '/app/chat'
-      preLoaderRoute: typeof AppChatChatRouteImport
+      preLoaderRoute: typeof AppChatRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/app/chat/': {
+      id: '/app/chat/'
+      path: '/'
+      fullPath: '/app/chat/'
+      preLoaderRoute: typeof AppChatIndexRouteImport
+      parentRoute: typeof AppChatRoute
+    }
+    '/app/chat/$chatSessionId': {
+      id: '/app/chat/$chatSessionId'
+      path: '/$chatSessionId'
+      fullPath: '/app/chat/$chatSessionId'
+      preLoaderRoute: typeof AppChatChatSessionIdRouteImport
+      parentRoute: typeof AppChatRoute
     }
   }
 }
 
+interface AppChatRouteChildren {
+  AppChatChatSessionIdRoute: typeof AppChatChatSessionIdRoute
+  AppChatIndexRoute: typeof AppChatIndexRoute
+}
+
+const AppChatRouteChildren: AppChatRouteChildren = {
+  AppChatChatSessionIdRoute: AppChatChatSessionIdRoute,
+  AppChatIndexRoute: AppChatIndexRoute,
+}
+
+const AppChatRouteWithChildren =
+  AppChatRoute._addFileChildren(AppChatRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppChatRoute: AppChatRouteWithChildren,
+  AppForgotPasswordRoute: AppForgotPasswordRoute,
   AppLoginRoute: AppLoginRoute,
   AppRegisterRoute: AppRegisterRoute,
-  AppChatChatRoute: AppChatChatRoute,
-  AppChatIndexRoute: AppChatIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

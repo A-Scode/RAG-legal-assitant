@@ -42,3 +42,45 @@ export const useGetUser = () => {
 
   return { data, isSuccess, isError, error };
 };
+
+export const useForgotPassword = () => {
+  return useMutation({
+    mutationFn: (email: string) => endpoints.forgotPassword(email),
+    onSuccess: () => {
+      toast.success("Password reset link sent to your email");
+    },
+    onError: (error: any) => {
+      console.error(error);
+      toast.error(error.response?.data?.detail || "Failed to send reset link");
+    },
+  });
+};
+
+
+export const useRegister = () => {
+  return useMutation({
+    mutationFn: (data: any) => endpoints.register(data),
+    onSuccess: () => {
+      toast.success("Registered successfully");
+    },
+    onError: (error: any) => {
+      console.error(error);
+      toast.error(error.response?.data?.detail || "Failed to register");
+    },
+  });
+};
+
+export const useGetOtp = () => {
+  return useMutation({
+    mutationFn: (data: { email: string; otp_type: "register" | "forget-password" }) =>
+      endpoints.getOtp(data.email, data.otp_type),
+    onSuccess: () => {
+      toast.success("OTP sent to your email");
+    },
+    onError: (error: any) => {
+      console.error(error);
+      toast.error(error.response?.data?.detail || "Failed to send OTP");
+    },
+  });
+};
+

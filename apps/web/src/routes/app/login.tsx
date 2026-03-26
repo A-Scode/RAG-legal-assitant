@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { useLogin } from '@/hooks/useAuth'
+import { useEffect } from 'react'
+import { useUserStore } from '@/stores'
 
 export const Route = createFileRoute('/app/login')({
   component: RouteComponent,
@@ -47,6 +49,14 @@ function RouteComponent() {
   })
 
   const login = useLogin();
+
+  const {user} = useUserStore();
+
+  useEffect(()=>{
+    if(user?.username){
+      loginForm.setFieldValue("username", user.username);
+    }
+  },[user])
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-background to-muted/50 p-4">
@@ -130,6 +140,14 @@ function RouteComponent() {
                 className="font-medium text-primary underline-offset-4 hover:underline"
               >
                 Register
+              </Link>
+            </p>
+            <p className="text-center text-sm text-muted-foreground">
+              <Link
+                to="/app/forgot-password"
+                className="font-medium text-primary underline-offset-4 hover:underline"
+              >
+                Forgot your password?
               </Link>
             </p>
           </CardFooter>
