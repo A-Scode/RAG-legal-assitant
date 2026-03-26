@@ -44,4 +44,8 @@ export const endpoints = {
   login: (username: string, password: string) =>
     api.post("token/", { username, password }),
   refresh: (refresh: string) => api.post("token/refresh/", { refresh }),
+  profile: () => api.get("profile/"),
+  updateProfile: (data: any) => api.put("profile/", data),
+  register: (data: any) => api.post("register/", data),
+  
 };

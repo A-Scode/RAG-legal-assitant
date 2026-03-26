@@ -1,8 +1,9 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { endpoints } from "@/api/endpoints";
-import { useAuthStore } from "@/stores";
+import { useAuthStore, useUserStore } from "@/stores";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 
 export const useLogin = () => {
   const naviate = useNavigate();
@@ -20,4 +21,24 @@ export const useLogin = () => {
       toast.error("Invalid credentials");
     },
   });
+};
+
+export const useGetUser = () => {
+  const { setUser } = useUserStore();
+
+  const { data, isSuccess, isError, error } = useQuery({
+    queryKey: ["GetUser"],
+    queryFn: () => endpoints.profile(),
+  });
+
+  useEffect(() => {
+    if (isSuccess) {
+      setUser(data.data);
+    }
+    if (isError) {
+      toast.error(error.message);
+    }
+  }, [isSuccess, isError, error]);
+
+  return { data, isSuccess, isError, error };
 };

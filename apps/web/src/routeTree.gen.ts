@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRegisterRouteImport } from './routes/app/register'
 import { Route as AppLoginRouteImport } from './routes/app/login'
 import { Route as AppChatIndexRouteImport } from './routes/app/chat/index'
+import { Route as AppChatChatRouteImport } from './routes/app/chat/_chat'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,11 +35,17 @@ const AppChatIndexRoute = AppChatIndexRouteImport.update({
   path: '/app/chat/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppChatChatRoute = AppChatChatRouteImport.update({
+  id: '/app/chat/_chat',
+  path: '/app/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app/login': typeof AppLoginRoute
   '/app/register': typeof AppRegisterRoute
+  '/app/chat': typeof AppChatChatRoute
   '/app/chat/': typeof AppChatIndexRoute
 }
 export interface FileRoutesByTo {
@@ -52,20 +59,28 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app/login': typeof AppLoginRoute
   '/app/register': typeof AppRegisterRoute
+  '/app/chat/_chat': typeof AppChatChatRoute
   '/app/chat/': typeof AppChatIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app/login' | '/app/register' | '/app/chat/'
+  fullPaths: '/' | '/app/login' | '/app/register' | '/app/chat' | '/app/chat/'
   fileRoutesByTo: FileRoutesByTo
   to: '/' | '/app/login' | '/app/register' | '/app/chat'
-  id: '__root__' | '/' | '/app/login' | '/app/register' | '/app/chat/'
+  id:
+    | '__root__'
+    | '/'
+    | '/app/login'
+    | '/app/register'
+    | '/app/chat/_chat'
+    | '/app/chat/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppLoginRoute: typeof AppLoginRoute
   AppRegisterRoute: typeof AppRegisterRoute
+  AppChatChatRoute: typeof AppChatChatRoute
   AppChatIndexRoute: typeof AppChatIndexRoute
 }
 
@@ -99,6 +114,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppChatIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/chat/_chat': {
+      id: '/app/chat/_chat'
+      path: '/app/chat'
+      fullPath: '/app/chat'
+      preLoaderRoute: typeof AppChatChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -106,6 +128,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppLoginRoute: AppLoginRoute,
   AppRegisterRoute: AppRegisterRoute,
+  AppChatChatRoute: AppChatChatRoute,
   AppChatIndexRoute: AppChatIndexRoute,
 }
 export const routeTree = rootRouteImport
