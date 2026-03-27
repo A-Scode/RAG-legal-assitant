@@ -18,33 +18,45 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { useLogin } from '@/hooks/useAuth'
+import { useEffect } from 'react'
+import { useUserStore } from '@/stores'
 
 export const Route = createFileRoute('/app/login')({
   component: RouteComponent,
 })
 
 const loginSchema = z.object({
-  email: z.string().email("Invalid email address."),
+  username: z.string().min(3, "Username must be at least 3 characters."),
   password: z
     .string()
-    .min(8, "Password must be at least 8 characters.")
+    .min(3, "Password must be at least 3 characters.")
     .max(100, "Password must be at most 100 characters."),
 })
 
 function RouteComponent() {
   const loginForm = useForm({
     defaultValues: {
-      email: "",
+      username: "",
       password: "",
     },
     validators: {
       onSubmit: loginSchema,
     },
     onSubmit: async ({ value }) => {
-      console.log("Form submitted:", value)
-      // toast.success("Logged in successfully") 
+      login.mutate(value);
     },
   })
+
+  const login = useLogin();
+
+  const {user} = useUserStore();
+
+  useEffect(()=>{
+    if(user?.username){
+      loginForm.setFieldValue("username", user.username);
+    }
+  },[user])
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-background to-muted/50 p-4">
@@ -65,27 +77,24 @@ function RouteComponent() {
           <CardContent>
             <FieldGroup>
               <loginForm.Field
-                name="email"
+                name="username"
                 children={(field) => {
                   const isInvalid =
                     field.state.meta.isTouched && !field.state.meta.isValid
                   return (
                     <Field data-invalid={isInvalid}>
-                      <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+                      <FieldLabel htmlFor={field.name}>Username</FieldLabel>
                       <Input
                         id={field.name}
                         name={field.name}
-                        type="email"
+                        type="text"
                         value={field.state.value}
                         onBlur={field.handleBlur}
                         onChange={(e) => field.handleChange(e.target.value)}
                         aria-invalid={isInvalid}
-                        placeholder="name@example.com"
-                        autoComplete="email"
+                        placeholder="janesmith"
+                        autoComplete="username"
                       />
-                      <FieldDescription>
-                        We'll never share your email.
-                      </FieldDescription>
                       {isInvalid && <FieldError errors={field.state.meta.errors} />}
                     </Field>
                   )
@@ -131,6 +140,14 @@ function RouteComponent() {
                 className="font-medium text-primary underline-offset-4 hover:underline"
               >
                 Register
+              </Link>
+            </p>
+            <p className="text-center text-sm text-muted-foreground">
+              <Link
+                to="/app/forgot-password"
+                className="font-medium text-primary underline-offset-4 hover:underline"
+              >
+                Forgot your password?
               </Link>
             </p>
           </CardFooter>

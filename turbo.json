@@ -3,11 +3,16 @@
   "tasks": {
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "dependsOn": ["migrate"]
     },
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
+    },
+    "migrate": {
+      "cache": false,
+      "dependsOn": ["^build"]
     }
   }
 }

@@ -1,0 +1,77 @@
+name: CI Pipeline - testing and build
+
+on:
+  push:
+    branches: "*"
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: legal_assitant_db
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: pass
+        ports:
+          - 5432:5432
+      mongodb:
+        image: mongo:latest
+        env:
+          MONGO_INITDB_ROOT_USERNAME: user
+          MONGO_INITDB_ROOT_PASSWORD: pass
+          MONGO_INITDB_DATABASE: test_db
+        ports:
+          - 27017:27017
+    defaults:
+      run:
+        working-directory: ./apps/backend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+      - name: Install Python
+        run: uv python install 3.12
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+      - name: Run tests
+        env:
+          MONGODB_HOST: "mongodb://user:pass@localhost:27017/test_db?authSource=admin"
+          MONGODB_NAME: "test_db"
+          MONGODB_PORT: "27017"
+          POSTGRES_USER: "user"
+          POSTGRES_DB: "legal_assitant_db"
+          POSTGRES_PASSWORD: "pass"
+          POSTGRES_HOST: "localhost"
+          POSTGRES_PORT: "5432"
+          DJANGO_SECRET: "django-insecure-cv!_37%6v3iqy-u^p75f_9#2(5u@!t$2v7m(1a@u*v4#p8_0*x"
+          DEBUG: "True"
+        run: |
+          uv run manage.py makemigrations
+          uv run manage.py migrate
+          uv run manage.py test
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: dev
+      VITE_API_BASE: "http://localhost:8000/api/"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: pnpm setup
+        uses: pnpm/action-setup@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile --filter=web --ignore-scripts
+      - name: Run build
+        working-directory: ./apps/web
+        run: pnpm run build
