@@ -1,0 +1,7 @@
+
+
+> backend@0.0.0 build /run/media/ascode/Files/Programs/agnetic-ai/RAG-legal-assitant/apps/backend
+> uv run python manage.py collectstatic --noinput
+
+
+203 static files copied to '/run/media/ascode/Files/Programs/agnetic-ai/RAG-legal-assitant/apps/backend/staticfiles', 3 skipped due to conflict.

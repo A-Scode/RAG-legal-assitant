@@ -1,0 +1,43 @@
+name: CI Pipeline - testing and build
+
+on:
+  push:
+    branches: "*"
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./apps/backend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+      - name: Install Python
+        run: uv python install 3.12
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+      - name: Run tests
+        run: uv run manage.py test
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./apps/web
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install
+      - name: Run build
+        run: pnpm run build
