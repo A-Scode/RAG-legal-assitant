@@ -71,6 +71,7 @@ jobs:
           node-version: 20
           cache: "pnpm"
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile --filter=web
+        run: pnpm install --no-frozen-lockfile --filter=web --ignore-scripts
       - name: Run build
-        run: pnpx turbo run build --filter=web
+        working-directory: ./apps/web
+        run: pnpm run build
