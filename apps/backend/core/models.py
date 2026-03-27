@@ -52,7 +52,7 @@ class Document(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    file_path = models.CharField(max_length=100)
+    file = models.FileField(upload_to='documents/')
     page_index_id = models.CharField(max_length=100)
     page_index_status = models.CharField(max_length=100, choices=DocumentStatus.choices,
                             default=DocumentStatus.NOT_INDEXED)

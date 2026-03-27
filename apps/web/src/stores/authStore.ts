@@ -6,6 +6,10 @@ interface User {
     email : string ;
     first_name : string ;
     last_name : string ;
+    state? : string ;
+    city? : string ;
+    occupation? : string ;
+    details? : string ;
 }
 
 interface AuthState {

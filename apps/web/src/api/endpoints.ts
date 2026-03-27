@@ -46,12 +46,13 @@ export const endpoints = {
   register: (data: any) => api.post("register/", data),
   refresh: (refresh: string) => api.post("token/refresh/", { refresh }),
   profile: () => api.get("profile/"),
-  updateProfile: (data: any) => api.put("profile/", data),
+  updateProfile: (data: any) => api.patch("profile/", data),
   forgotPassword: (email: string) => api.post("password-reset/", { email }),
   getOtp: (email: string, otp_type: "register" | "forget-password") =>
     api.post("otp/", { email, otp_type }),
   createChatSession: (title: string) =>
     api.post("chat-sessions/", { title }),
+  deleteAllChatSessions: () => api.delete("chat-sessions/clear-all/"),
   getChatSessions: () => api.get("chat-sessions/"),
   deleteChatSession: (session_id: string) =>
     api.delete(`chat-sessions/${session_id}/`),

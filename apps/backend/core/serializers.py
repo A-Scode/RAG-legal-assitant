@@ -70,7 +70,7 @@ class LoginSerializer(serializers.Serializer):
 class ProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['state', 'city', 'occupation', 'details']
+        fields = ['first_name', 'last_name', 'state', 'city', 'occupation', 'details']
 
 class GetOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()

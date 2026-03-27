@@ -7,9 +7,9 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useDeleteChatSession, useGetChatSessions, useUpdateChatSession } from '@/hooks/useChat'
 import { cn, logout, formatRelativeDate } from '@/lib/utils'
-import { useUserStore } from '@/stores'
+import { useAuthStore, useUserStore } from '@/stores'
 import { useQueryClient } from '@tanstack/react-query'
-import { createFileRoute, Outlet, useNavigate, useParams } from '@tanstack/react-router'
+import { createFileRoute, Outlet, redirect, useNavigate, useParams } from '@tanstack/react-router'
 import { CreditCard, History, LogOut, MessageSquare, MoreVertical, PanelLeftClose, PanelLeftOpen, Pencil, Plus, Sparkles, Trash2, User } from 'lucide-react'
 import { createContext, useContext, useEffect, useState } from 'react'
 
@@ -39,6 +39,13 @@ export const useChatLayout = () => {
 
 export const Route = createFileRoute('/app/chat')({
   component: RouteComponent,
+  beforeLoad: () => {
+    if (!useAuthStore.getState().isAuthenticated) {
+      throw redirect({
+        to: '/app/login',
+      })
+    }
+  }
 })
 
 function RouteComponent() {
@@ -206,17 +213,17 @@ function RouteComponent() {
                       {initials}
                     </AvatarFallback>
                   </Avatar>
-                  {sidebarOpen && <span className="truncate text-sm font-medium">{user?.username || 'Guest'}</span>}
+                  {sidebarOpen && <span className="truncate text-sm font-medium">@{user?.username || 'Guest'}</span>}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="right" align="end" className="w-56">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate({to: "/app/profile"})}>
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate({to: "/app/settings"})}>
                   <CreditCard className="mr-2 h-4 w-4" />
                   <span>Settings</span>
                 </DropdownMenuItem>
@@ -267,11 +274,11 @@ function RouteComponent() {
               <DropdownMenuContent side="bottom" align="end" className="w-56">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate({to: "/app/profile"})}>
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate({to: "/app/settings"})}>
                   <CreditCard className="mr-2 h-4 w-4" />
                   <span>Settings</span>
                 </DropdownMenuItem>
