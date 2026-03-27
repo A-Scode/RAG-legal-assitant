@@ -1,7 +1,7 @@
-from rest_framework import generics
+from rest_framework import generics , viewsets
 from rest_framework.permissions import IsAuthenticated , AllowAny
 from .models import User , ChatSession , ChatMessage , Document , DocumentRefered , OTP
-from .serializers import UserSerializer , RegisterSerializer , LoginSerializer , ProfileUpdateSerializer , GetOTPSerializer
+from .serializers import UserSerializer , RegisterSerializer , LoginSerializer , ProfileUpdateSerializer , GetOTPSerializer, ChatSessionSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
@@ -56,6 +56,15 @@ class LoginView(generics.GenericAPIView):
             'token': token,
             'refresh': refresh,
         })
+
+
+class ChatSessionViewSet(viewsets.ModelViewSet):
+    queryset = ChatSession.objects.all().order_by("-created_at")
+    permission_classes = [IsAuthenticated]
+    serializer_class = ChatSessionSerializer
+    
+    
+    
     
     
         

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, OTP
+from .models import User, OTP , ChatSession
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 import random
@@ -98,3 +98,16 @@ class GetOTPSerializer(serializers.Serializer):
             "email": attrs['email'],
             "otp_type": attrs['otp_type']
         }
+
+class ChatSessionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChatSession
+        fields = ['session_id' , 'title' , 'created_at' , 'updated_at']
+    def create(self , attrs):
+        user = self.context['request'].user
+        return ChatSession.objects.create(user=user , **attrs)
+    
+    def update(self , instance , attrs):
+        instance.title = attrs.get('title' , instance.title)
+        instance.save()
+        return instance
