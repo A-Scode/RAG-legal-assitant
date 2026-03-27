@@ -1,4 +1,5 @@
-from rest_framework import generics , viewsets
+from rest_framework import generics , viewsets , status
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated , AllowAny
 from .models import User , ChatSession , ChatMessage , Document , DocumentRefered , OTP
 from .serializers import UserSerializer , RegisterSerializer , LoginSerializer , ProfileUpdateSerializer , GetOTPSerializer, ChatSessionSerializer
@@ -16,7 +17,7 @@ class UserProfileView(generics.GenericAPIView):
         return Response(serializer.data)
 
     @extend_schema(request=ProfileUpdateSerializer, responses=UserSerializer)
-    def post(self, request):
+    def patch(self, request):
         serializer = ProfileUpdateSerializer(request.user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -58,10 +59,20 @@ class LoginView(generics.GenericAPIView):
         })
 
 
+
+
 class ChatSessionViewSet(viewsets.ModelViewSet):
     queryset = ChatSession.objects.all().order_by("-created_at")
     permission_classes = [IsAuthenticated]
     serializer_class = ChatSessionSerializer
+    
+    def get_queryset(self):
+        return self.queryset.filter(user=self.request.user)
+
+    @action(detail=False, methods=['delete'], url_path='clear-all')
+    def clear_all(self, request):
+        ChatSession.objects.filter(user=request.user).delete()
+        return Response(status=204)
     
     
     

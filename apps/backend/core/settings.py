@@ -14,6 +14,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 from datetime import timedelta
+from django.templatetags.static import static
 
 load_dotenv(".env.local")
 
@@ -154,11 +155,31 @@ UNFOLD = {
     "SITE_TITLE": "Legal Assistant Admin",
     "SITE_HEADER": "Legal Assistant",
     "SITE_INDEX_TITLE": "Legal Assistant",
+    "SITE_LOGO": {
+        "light": lambda request : static('admin/img/admin-icon.png'),
+        "dark": lambda request : static('admin/img/admin-icon.png')
+    },
+    "SITE_ICON": {
+        "light": lambda request : static('admin/img/admin-icon.png'),
+        "dark": lambda request : static('admin/img/admin-icon.png')
+    },
     "SIDEBAR": {
         "show_search": True,
         "navigation": [
         ],
     },
+    "SITE_FAVICONS": [
+        {
+            "rel": "icon",
+            "sizes": "32x32",
+            "type": "image/svg+xml",
+            "href": lambda request: static("admin/img/admin-icon.png"),
+        },
+    ],
+
+    "LOGIN" :{
+        "image" : lambda request: static("admin/img/admin-icon.png"),
+    }
 }
 
 DATABASE_ROUTERS = ['core.routers.DBRouter']

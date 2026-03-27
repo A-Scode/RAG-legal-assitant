@@ -84,3 +84,31 @@ export const useGetOtp = () => {
   });
 };
 
+
+export const useUpdateProfile = () => {
+    const { setUser } = useUserStore();
+    return useMutation({
+        mutationFn: (data: any) => endpoints.updateProfile(data),
+        onSuccess: (data) => {
+            setUser(data.data);
+            toast.success("Profile updated successfully");
+        },
+        onError: (error: any) => {
+            console.error(error);
+            toast.error(error.response?.data?.detail || "Failed to update profile");
+        },
+    });
+};
+
+export const useClearHistory = () => {
+    return useMutation({
+        mutationFn: () => endpoints.deleteAllChatSessions(),
+        onSuccess: () => {
+            toast.success("All chat sessions cleared");
+        },
+        onError: (error: any) => {
+            console.error(error);
+            toast.error(error.response?.data?.detail || "Failed to clear history");
+        },
+    });
+};

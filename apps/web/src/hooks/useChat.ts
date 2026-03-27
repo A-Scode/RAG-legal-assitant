@@ -54,3 +54,18 @@ export const useDeleteChatSession = () => {
     },
   });
 }
+
+export const useDeleteAllChatSessions = () => {
+  return useMutation({
+    mutationFn: () => endpoints.deleteAllChatSessions(),
+    onSuccess: () => {
+      toast.success("All chat sessions deleted successfully");
+    },
+    onError: (error: any) => {
+      console.error(error);
+      toast.error(
+        error.response?.data?.detail || "Failed to delete all chat sessions",
+      );
+    },
+  });
+}

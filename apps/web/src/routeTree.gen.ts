@@ -10,7 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppSettingsRouteImport } from './routes/app/settings'
 import { Route as AppRegisterRouteImport } from './routes/app/register'
+import { Route as AppProfileRouteImport } from './routes/app/profile'
 import { Route as AppLoginRouteImport } from './routes/app/login'
 import { Route as AppForgotPasswordRouteImport } from './routes/app/forgot-password'
 import { Route as AppChatRouteImport } from './routes/app/chat'
@@ -22,9 +24,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/app/settings',
+  path: '/app/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppRegisterRoute = AppRegisterRouteImport.update({
   id: '/app/register',
   path: '/app/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppProfileRoute = AppProfileRouteImport.update({
+  id: '/app/profile',
+  path: '/app/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppLoginRoute = AppLoginRouteImport.update({
@@ -58,7 +70,9 @@ export interface FileRoutesByFullPath {
   '/app/chat': typeof AppChatRouteWithChildren
   '/app/forgot-password': typeof AppForgotPasswordRoute
   '/app/login': typeof AppLoginRoute
+  '/app/profile': typeof AppProfileRoute
   '/app/register': typeof AppRegisterRoute
+  '/app/settings': typeof AppSettingsRoute
   '/app/chat/$chatSessionId': typeof AppChatChatSessionIdRoute
   '/app/chat/': typeof AppChatIndexRoute
 }
@@ -66,7 +80,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app/forgot-password': typeof AppForgotPasswordRoute
   '/app/login': typeof AppLoginRoute
+  '/app/profile': typeof AppProfileRoute
   '/app/register': typeof AppRegisterRoute
+  '/app/settings': typeof AppSettingsRoute
   '/app/chat/$chatSessionId': typeof AppChatChatSessionIdRoute
   '/app/chat': typeof AppChatIndexRoute
 }
@@ -76,7 +92,9 @@ export interface FileRoutesById {
   '/app/chat': typeof AppChatRouteWithChildren
   '/app/forgot-password': typeof AppForgotPasswordRoute
   '/app/login': typeof AppLoginRoute
+  '/app/profile': typeof AppProfileRoute
   '/app/register': typeof AppRegisterRoute
+  '/app/settings': typeof AppSettingsRoute
   '/app/chat/$chatSessionId': typeof AppChatChatSessionIdRoute
   '/app/chat/': typeof AppChatIndexRoute
 }
@@ -87,7 +105,9 @@ export interface FileRouteTypes {
     | '/app/chat'
     | '/app/forgot-password'
     | '/app/login'
+    | '/app/profile'
     | '/app/register'
+    | '/app/settings'
     | '/app/chat/$chatSessionId'
     | '/app/chat/'
   fileRoutesByTo: FileRoutesByTo
@@ -95,7 +115,9 @@ export interface FileRouteTypes {
     | '/'
     | '/app/forgot-password'
     | '/app/login'
+    | '/app/profile'
     | '/app/register'
+    | '/app/settings'
     | '/app/chat/$chatSessionId'
     | '/app/chat'
   id:
@@ -104,7 +126,9 @@ export interface FileRouteTypes {
     | '/app/chat'
     | '/app/forgot-password'
     | '/app/login'
+    | '/app/profile'
     | '/app/register'
+    | '/app/settings'
     | '/app/chat/$chatSessionId'
     | '/app/chat/'
   fileRoutesById: FileRoutesById
@@ -114,7 +138,9 @@ export interface RootRouteChildren {
   AppChatRoute: typeof AppChatRouteWithChildren
   AppForgotPasswordRoute: typeof AppForgotPasswordRoute
   AppLoginRoute: typeof AppLoginRoute
+  AppProfileRoute: typeof AppProfileRoute
   AppRegisterRoute: typeof AppRegisterRoute
+  AppSettingsRoute: typeof AppSettingsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -126,11 +152,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/settings': {
+      id: '/app/settings'
+      path: '/app/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/register': {
       id: '/app/register'
       path: '/app/register'
       fullPath: '/app/register'
       preLoaderRoute: typeof AppRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/profile': {
+      id: '/app/profile'
+      path: '/app/profile'
+      fullPath: '/app/profile'
+      preLoaderRoute: typeof AppProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/login': {
@@ -189,7 +229,9 @@ const rootRouteChildren: RootRouteChildren = {
   AppChatRoute: AppChatRouteWithChildren,
   AppForgotPasswordRoute: AppForgotPasswordRoute,
   AppLoginRoute: AppLoginRoute,
+  AppProfileRoute: AppProfileRoute,
   AppRegisterRoute: AppRegisterRoute,
+  AppSettingsRoute: AppSettingsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
