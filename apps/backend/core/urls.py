@@ -19,8 +19,14 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.conf.urls.static import static
 from django.conf import settings
-from .views import UserProfileView , RegisterView , LoginView , GetOTPView
+from .views import UserProfileView , RegisterView , LoginView , GetOTPView , ChatSessionViewSet
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from rest_framework import routers
+from django.urls import include
+
+router = routers.DefaultRouter()
+
+router.register(r'chat-sessions', ChatSessionViewSet, basename='chat-session')
 
 
 urlpatterns = [
@@ -33,6 +39,7 @@ urlpatterns = [
     path('api/otp/', GetOTPView.as_view(), name='get_otp'),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/', include(router.urls)),
 ]
 
 

@@ -1,21 +1,32 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { cn, logout } from '@/lib/utils'
+import { useDeleteChatSession, useGetChatSessions, useUpdateChatSession } from '@/hooks/useChat'
+import { cn, logout, formatRelativeDate } from '@/lib/utils'
 import { useUserStore } from '@/stores'
-import { createFileRoute, Outlet } from '@tanstack/react-router'
-import { CreditCard, History, LogOut, MessageSquare, PanelLeftClose, PanelLeftOpen, Plus, Sparkles, User } from 'lucide-react'
-import { createContext, useContext, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { createFileRoute, Outlet, useNavigate, useParams } from '@tanstack/react-router'
+import { CreditCard, History, LogOut, MessageSquare, MoreVertical, PanelLeftClose, PanelLeftOpen, Pencil, Plus, Sparkles, Trash2, User } from 'lucide-react'
+import { createContext, useContext, useEffect, useState } from 'react'
 
 export interface ChatLayoutContextType {
   sidebarOpen: boolean
   setSidebarOpen: (open: boolean) => void
   headerTitle: string
   setHeaderTitle: (title: string) => void
-  history: any[]
-  setHistory: (history: any[]) => void
+  history: HistoryItem[]
+  setHistory: (history: HistoryItem[]) => void
+}
+
+interface HistoryItem {
+  created_at: string
+  session_id: string
+  title: string
+  updated_at: string
 }
 
 const ChatLayoutContext = createContext<ChatLayoutContextType | null>(null)
@@ -33,12 +44,30 @@ export const Route = createFileRoute('/app/chat')({
 function RouteComponent() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [headerTitle, setHeaderTitle] = useState("AI Legal Assistant")
-  const [history, setHistory] = useState([
-    { id: 2, title: "Drafting NDA for Startup", date: "1 hour ago" },
-  ])
+  const [history, setHistory] = useState<HistoryItem[]>([])
 
   const {user} = useUserStore();
   const initials = user ? `${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase() : '??'
+
+  const { data } = useGetChatSessions();
+
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if(data){
+      setHistory(data.data);
+    }
+  },[data])
+
+
+  const navigate = useNavigate();
+  const params = useParams({ strict : false });
+  const { mutate: deleteSession } = useDeleteChatSession();
+  const { mutate: updateSession } = useUpdateChatSession();
+
+  const [renameId, setRenameId] = useState<string | null>(null);
+  const [newName, setNewName] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   return (
     <ChatLayoutContext.Provider value={{
@@ -81,7 +110,7 @@ function RouteComponent() {
           <div className="p-4 shrink-0 overflow-hidden">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button className={cn("w-full gap-2 transition-all duration-300", sidebarOpen ? "justify-start px-4" : "justify-center px-0")} size="lg">
+                <Button className={cn("w-full gap-2 transition-all duration-300", sidebarOpen ? "justify-start px-4" : "justify-center px-0")} size="lg" onClick={() => navigate({to:"/app/chat"})}>
                   <Plus className="w-4 h-4 shrink-0" />
                   {sidebarOpen && <span className="truncate">New Chat</span>}
                 </Button>
@@ -98,23 +127,69 @@ function RouteComponent() {
                 </p>
               )}
               {history.map((chat) => (
-                <Tooltip key={chat.id} delayDuration={500}>
+                <Tooltip key={chat.session_id} delayDuration={500}>
                   <TooltipTrigger asChild>
-                    <button className={cn(
-                      "w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/80 text-left transition-all duration-200 group relative",
-                      !sidebarOpen && "justify-center px-0"
-                    )}>
+                    <div 
+                      onClick={() => navigate({ 
+                        to: `/app/chat/$chatSessionId`, 
+                        params: { chatSessionId: chat.session_id },
+                        search: { prompt: undefined }
+                      })}
+                      className={cn(
+                        "w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200 group relative cursor-pointer border border-transparent",
+                        !sidebarOpen && "justify-center px-0",
+                        params.chatSessionId === chat.session_id 
+                          ? "bg-background shadow-sm border-border ring-1 ring-primary/5" 
+                          : "hover:bg-muted/50 hover:border-border/30"
+                      )}
+                    >
+                      {/* Active Indicator Bar */}
+                      {params.chatSessionId === chat.session_id && sidebarOpen && (
+                        <div className="absolute left-0 top-3 bottom-3 w-1 bg-primary rounded-r-full" />
+                      )}
                       <div className="relative">
                         <MessageSquare className="w-4 h-4 text-primary shrink-0 transition-transform group-hover:scale-110" />
                         {!sidebarOpen && <div className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full border-2 border-background animate-pulse" />}
                       </div>
                       {sidebarOpen && (
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-sm font-medium truncate">{chat.title}</span>
-                          <span className="text-[10px] text-muted-foreground">{chat.date}</span>
-                        </div>
+                        <>
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className="text-sm font-medium truncate">{chat.title}</span>
+                            <span className="text-[10px] text-muted-foreground">{formatRelativeDate(chat.created_at)}</span>
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity ml-auto shrink-0"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MoreVertical className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onSelect={(e) => {
+                                e.stopPropagation();
+                                setRenameId(chat.session_id);
+                                setNewName(chat.title);
+                              }}>
+                                <Pencil className="mr-2 w-4 h-4" /> Rename
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                variant="destructive"
+                                onSelect={(e) => {
+                                  e.stopPropagation();
+                                  setDeleteId(chat.session_id);
+                                }}
+                              >
+                                <Trash2 className="mr-2 w-4 h-4" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </>
                       )}
-                    </button>
+                    </div>
                   </TooltipTrigger>
                   {!sidebarOpen && <TooltipContent side="right">{chat.title}</TooltipContent>}
                 </Tooltip>
@@ -209,11 +284,58 @@ function RouteComponent() {
             </DropdownMenu>
             </div>
           </header>
-          <main className="flex-1 overflow-hidden relative">
+          <main className="flex-1 overflow-hidden relative flex flex-col">
             <Outlet />
           </main>
         </div>
       </div>
+
+      <Dialog open={!!renameId} onOpenChange={(open) => !open && setRenameId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Chat</DialogTitle>
+            <DialogDescription>Enter a new name for this chat session.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="Chat name"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  updateSession({ session_id: renameId!, title: newName }, { onSuccess: () => { setRenameId(null); queryClient.invalidateQueries({ queryKey: ["chat-sessions"] }); } });
+                }
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRenameId(null)}>Cancel</Button>
+            <Button onClick={() => updateSession({ session_id: renameId!, title: newName }, { onSuccess: () => { setRenameId(null); queryClient.invalidateQueries({ queryKey: ["chat-sessions"] }); } })}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Chat</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this chat session? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDeleteId(null)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteSession(deleteId!, { onSuccess: () => { setDeleteId(null); queryClient.invalidateQueries({ queryKey: ["chat-sessions"] }); } })}
+            >
+              Delete Session
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </ChatLayoutContext.Provider>
   )
 }

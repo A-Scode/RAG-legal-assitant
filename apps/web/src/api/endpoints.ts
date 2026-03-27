@@ -48,5 +48,15 @@ export const endpoints = {
   profile: () => api.get("profile/"),
   updateProfile: (data: any) => api.put("profile/", data),
   forgotPassword: (email: string) => api.post("password-reset/", { email }),
-  getOtp: (email: string, otp_type: "register" | "forget-password") => api.post("otp/", { email, otp_type }),
+  getOtp: (email: string, otp_type: "register" | "forget-password") =>
+    api.post("otp/", { email, otp_type }),
+  createChatSession: (title: string) =>
+    api.post("chat-sessions/", { title }),
+  getChatSessions: () => api.get("chat-sessions/"),
+  deleteChatSession: (session_id: string) =>
+    api.delete(`chat-sessions/${session_id}/`),
+  updateChatSession: (session_id: string, title: string) =>
+    api.put(`chat-sessions/${session_id}/`, { title }),
+  getChatSession: (session_id: string) =>
+    api.get(`chat-sessions/${session_id}/`),
 };
