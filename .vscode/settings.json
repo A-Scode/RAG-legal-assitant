@@ -1,5 +1,26 @@
 {
-    "python.linting.pylintEnabled": false,
-    "python.linting.enabled": true,
-    "python.linting.flake8Enabled": true
+  "python.languageServer": "None",
+  "python.defaultInterpreterPath": "${workspaceFolder}/apps/backend/.venv/bin/python",
+  "python.analysis.extraPaths": ["${workspaceFolder}/apps/backend"],
+  "python.analysis.indexing": true,
+  "python.analysis.userFileIndexingLimit": 2000,
+  "python.analysis.persistAllIndices": true,
+  "python.analysis.exclude": [
+    "**/node_modules",
+    "**/.venv",
+    "**/media",
+    "**/static"
+  ],
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/.venv": true,
+    "**/media": true,
+    "**/static": true
+  },
+  "python.linting.pylintEnabled": false,
+  "python.linting.enabled": true,
+  "python.linting.flake8Enabled": true,
+  "python.analysis.typeCheckingMode": "off",
+
+  
 }

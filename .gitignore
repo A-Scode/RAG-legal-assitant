@@ -6,3 +6,6 @@
 **/*.env*
 .env
 **/db.sqlite3
+**/my_local_models/*
+**/apps/backend/media/*
+**/apps/backend/logs/*

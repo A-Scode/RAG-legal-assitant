@@ -39,6 +39,8 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",
+    "channels",
     "unfold",
     "unfold.contrib.filters",
     'core',
@@ -53,6 +55,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'drf_spectacular',
     'drf_spectacular_sidecar', 
+    'django_tasks',
+    'django_tasks_db',
 ]
 
 MIDDLEWARE = [
@@ -224,3 +228,66 @@ SPECTACULAR_SETTINGS = {
     'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
     'REDOC_DIST': 'SIDECAR',
 }
+
+# Qdrant Configuration
+QDRANT_HOST = os.getenv('QDRANT_HOST')
+QDRANT_PORT = os.getenv('QDRANT_PORT')
+QDRANT_API_KEY = os.getenv('QDRANT_API_KEY')
+QDRANT_COLLECTION_NAME = "legal_documents"
+
+EMBEDDING_MODEL_ID= "BAAI/bge-small-en-v1.5"
+
+
+
+LOG_DIR = Path(BASE_DIR) / "logs"
+LOG_DIR.mkdir(exist_ok=True)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOG_DIR / "django.log",
+            'maxBytes': 150 * 1024,
+            'backupCount': 30,
+            'formatter': 'verbose',
+            'encoding': 'utf-8',     # Important for special characters
+        },
+        'console': {
+            'level' : 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file' , 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
+
+TASKS = {
+    "default": {
+        "BACKEND": "django_tasks_db.DatabaseBackend",
+    }
+}
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_valkey.core.ValkeyChannelLayer",
+        "CONFIG": {
+            "hosts": [(os.getenv("VALKEY_HOST"), os.getenv("VALKEY_PORT"))],
+        },
+    },
+}
+ASGI_APPLICATION = "core.asgi.application"
