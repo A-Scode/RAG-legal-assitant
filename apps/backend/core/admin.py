@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User , ChatSession , ChatMessage , Document , DocTree , DocumentRefered , OTP
+from .models import User , ChatSession , ChatMessage , Document , DocumentRefered , OTP
 from unfold.admin import ModelAdmin , display
 
 @admin.register(User)
@@ -26,16 +26,10 @@ class ChatMessageAdmin(ModelAdmin):
 
 @admin.register(Document)
 class DocumentAdmin(ModelAdmin):
-    list_display = ('doc_id', 'title', 'created_at', 'updated_at', 'page_index_id', 'page_index_status')
-    list_filter = ('page_index_status', 'created_at', 'updated_at')
-    search_fields = ('doc_id', 'title', 'page_index_id')
+    list_display = ('doc_id', 'title', 'created_at', 'updated_at')
+    list_filter = ('created_at', 'updated_at')
+    search_fields = ('doc_id', 'title')
     ordering = ('-created_at',)
-
-@admin.register(DocTree)
-class DocTreeAdmin(ModelAdmin):
-    list_display = ('tree_id', 'doc_tree')
-    list_filter = ('tree_id',)
-    search_fields = ('tree_id',)
 
 @admin.register(DocumentRefered)
 class DocumentReferedAdmin(ModelAdmin):

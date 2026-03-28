@@ -1,14 +1,14 @@
-from django.db import models
-from django.contrib.auth.models import AbstractUser
 from datetime import timedelta
-from django.utils import timezone
-import uuid6
-from .schemas import PageNodeSchema
+from typing import List, Optional
 
-from django_mongodb_backend.fields import ArrayField,ObjectIdAutoField , EmbeddedModelArrayField ,EmbeddedModelField
-from django_mongodb_backend.models import EmbeddedModel
-from django_pydantic_field import SchemaField
-from typing import List , Optional
+from django.contrib.auth.models import AbstractUser
+from django.core.validators import FileExtensionValidator
+from django.db import models
+from django.utils import timezone
+import docx
+import uuid6
+
+        
 
 
 class User(AbstractUser):
@@ -41,37 +41,29 @@ class ChatMessage(models.Model):
     
     
 class Document(models.Model):
-
-    class DocumentStatus(models.TextChoices):
-        NOT_INDEXED = 'Not Indexed'
-        IN_PROGRESS = 'in-progress'
-        INDEXED = 'Indexed'
-    
     doc_id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
     title = models.CharField(max_length=100)
-    content = models.TextField()
+    content = models.TextField(null=True , blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    file = models.FileField(upload_to='documents/')
-    page_index_id = models.CharField(max_length=100)
-    page_index_status = models.CharField(max_length=100, choices=DocumentStatus.choices,
-                            default=DocumentStatus.NOT_INDEXED)
-    
+    file = models.FileField(upload_to='documents/',validators=[FileExtensionValidator(['pdf','docx', 'txt'])])
+    embedding_status = models.CharField(max_length=100 , choices=[("pending" , "pending") , ("embedding" , "embedding") , ("embedding_done" , "embedding_done") , ("embedding_failed" , "embedding_failed")] , default="pending")
+    verified = models.BooleanField(default=False)
     
     def __str__(self):
         return self.title
 
-    def start_indexing(self):
-        self.page_index_status = Document.DocumentStatus.IN_PROGRESS
-        self.save()
-    
-    def complete_indexing(self,tree):
-        self.page_index_status = Document.DocumentStatus.INDEXED
-        self.save()
-
-    @property
-    def doc_tree(self):
-        return DocTree.objects.get(tree_id=self.page_index_id).doc_tree
+    def save(self , *args , **kwargs):
+        if self.file:
+            if self.file.name.endswith('.docx'):
+                doc = docx.Document(self.file)
+                self.content = "\n".join([para.text for para in doc.paragraphs])
+            elif self.file.name.endswith('.pdf'):
+                pass
+            elif self.file.name.endswith('.txt'):
+                with open(self.file.path, 'r') as f:
+                    self.content = f.read()
+            super().save(*args, **kwargs)
 
 
 class OTP(models.Model):
@@ -84,13 +76,8 @@ class OTP(models.Model):
         return self.created_at + timedelta(minutes=5) > timezone.now()
 
 
-class DocTree(models.Model):
-    tree_id = ObjectIdAutoField(primary_key=True)
-    doc_tree = SchemaField(List[PageNodeSchema], null=False)
-    
-    
-    
 
 class DocumentRefered(models.Model):
     message = models.ForeignKey(ChatMessage, on_delete=models.CASCADE)
     document = models.ForeignKey(Document, on_delete=models.CASCADE)
+    pages = models.JSONField(default=list)
