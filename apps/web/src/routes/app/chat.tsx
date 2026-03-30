@@ -5,6 +5,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { useGetUser } from '@/hooks/useAuth'
 import { useDeleteChatSession, useGetChatSessions, useUpdateChatSession } from '@/hooks/useChat'
 import { cn, logout, formatRelativeDate } from '@/lib/utils'
 import { useAuthStore, useUserStore } from '@/stores'
@@ -59,6 +60,8 @@ function RouteComponent() {
   const { data } = useGetChatSessions();
 
   const queryClient = useQueryClient();
+
+  useGetUser();
 
   useEffect(() => {
     if(data){

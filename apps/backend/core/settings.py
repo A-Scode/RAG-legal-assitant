@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     "channels",
     "unfold",
     "unfold.contrib.filters",
-    'core',
+    'core.apps.CoreConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -284,7 +284,7 @@ TASKS = {
 
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels_valkey.core.ValkeyChannelLayer",
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
             "hosts": [(os.getenv("VALKEY_HOST"), os.getenv("VALKEY_PORT"))],
         },

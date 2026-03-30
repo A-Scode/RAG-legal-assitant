@@ -7,6 +7,7 @@ from django.db import models
 from django.utils import timezone
 import docx
 import uuid6
+from django.db.models import F
 
         
 
@@ -38,6 +39,19 @@ class ChatMessage(models.Model):
     def __str__(self):
         return self.content
 
+    @classmethod
+    def get_message_history(cls , session_id : str):
+        histroy = []
+        messages = cls.objects.filter(session=session_id).order_by("created_at")
+
+        for message in messages:
+            histroy.append({
+                "role" : message.role,
+                "content" : message.content,
+                "created_at" : message.created_at,
+            })
+        return histroy
+
     
     
 class Document(models.Model):
@@ -61,9 +75,13 @@ class Document(models.Model):
             elif self.file.name.endswith('.pdf'):
                 pass
             elif self.file.name.endswith('.txt'):
-                with open(self.file.path, 'r') as f:
-                    self.content = f.read()
-            super().save(*args, **kwargs)
+                self.file.seek(0)
+                content = self.file.read()
+                if isinstance(content, bytes):
+                    self.content = content.decode('utf-8')
+                else:
+                    self.content = content
+        super().save(*args, **kwargs)
 
 
 class OTP(models.Model):
@@ -81,3 +99,29 @@ class DocumentRefered(models.Model):
     message = models.ForeignKey(ChatMessage, on_delete=models.CASCADE)
     document = models.ForeignKey(Document, on_delete=models.CASCADE)
     pages = models.JSONField(default=list)
+
+    @classmethod
+    def get_document_refered(cls, msg_id: str):
+        references = cls.objects.filter(message=msg_id).values(
+            doc_pk=F('document__id'), 
+            doc_id=F('document__doc_id'), 
+            title=F('document__title'),
+            pages_list=F('pages') 
+        )
+
+        grouped_docs = {}
+
+        for ref in references:
+            d_id = ref['doc_id']
+            
+            if d_id not in grouped_docs:
+                grouped_docs[d_id] = {
+                    "doc_id": d_id,
+                    "title": ref['title'],
+                    "pages": []
+                }
+        
+            if ref['pages_list']:
+                combined_pages = set(grouped_docs[d_id]["pages"] + ref['pages_list'])
+                grouped_docs[d_id]["pages"] = sorted(list(combined_pages))
+        return list(grouped_docs.values())

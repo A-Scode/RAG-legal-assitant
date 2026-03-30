@@ -2,8 +2,8 @@
     "name": "backend",
     "version": "0.0.0",
     "scripts": {
-        "dev": "uv run python manage.py runserver",
-        "start": "uv run python manage.py runserver",
+        "dev": "uv run honcho -f Procfile.dev start",
+        "start": "uv run honcho -f Procfile.dev start",
         "build": "uv run python manage.py collectstatic --noinput",
         "migrate": "uv run python manage.py migrate",
         "createsuperuser": "uv run python manage.py createsuperuser",

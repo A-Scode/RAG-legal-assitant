@@ -1,0 +1,2 @@
+web: uv run manage.py runserver
+worker: uv run manage.py db_worker

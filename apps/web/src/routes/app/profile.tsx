@@ -10,6 +10,7 @@ import { createFileRoute, redirect, useRouter, useNavigate } from '@tanstack/rea
 import { Briefcase, Mail, MapPin, ShieldCheck, User, Globe, FileText, Settings, LogOut, ArrowLeft } from 'lucide-react'
 import { logout } from '@/lib/utils'
 import { useTheme } from 'next-themes'
+import { useGetUser } from '@/hooks/useAuth'
 
 export const Route = createFileRoute('/app/profile')({
   component: RouteComponent,
@@ -27,6 +28,7 @@ function RouteComponent() {
   const router = useRouter()
   const navigate = useNavigate()
   const { resolvedTheme } = useTheme()
+  useGetUser();
   
   const initials = user ? `${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase() : '??'
   const fullName = user ? `${user.first_name} ${user.last_name}` : 'Guest User'

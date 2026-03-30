@@ -3,9 +3,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Textarea } from '@/components/ui/textarea'
+import { useAuthStore } from '@/stores'
 import { createFileRoute } from '@tanstack/react-router'
 import { SendHorizontal, User, Sparkles, Scale } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
+import useWebSocket , {ReadyState} from 'react-use-websocket'
+import { toast } from 'sonner'
 
 export const Route = createFileRoute('/app/chat/$chatSessionId')({
   component: RouteComponent,
@@ -23,14 +26,18 @@ type Message = {
   timestamp: Date
 }
 
+const WEBSOCKET_URL = import.meta.env.VITE_WEBSOCKET_BASE_URL
+
 function RouteComponent() {
   const { prompt: initialPrompt } = Route.useSearch()
+  const {chatSessionId} = Route.useParams()
   const [prompt, setPrompt] = useState('')
+  const {token} = useAuthStore()
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       role: 'assistant',
-      content: "Hello! I'm your AI Legal Assistant. I can help you analyze documents, draft agreements, or answer legal queries based on your uploaded library. How can I assist you today?",
+      content: "Hello! I'm your Legal Assistant. I can help you analyze documents, draft agreements, or answer legal queries based on your uploaded library. How can I assist you today?",
       timestamp: new Date(),
     },
   ])
@@ -40,6 +47,21 @@ function RouteComponent() {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
+
+  const {sendJsonMessage , lastJsonMessage , readyState } = useWebSocket(`${WEBSOCKET_URL}${chatSessionId}/?token=${token}`,{
+    shouldReconnect: () => true,  
+    reconnectAttempts: 10,
+    reconnectInterval: 3000,
+  })
+
+
+  useEffect(()=>{
+    toast.info(`Connection Status: ${ReadyState[readyState]}`)
+  } , [readyState])
+
+  useEffect(()=>{
+    console.log(lastJsonMessage)
+  }, [lastJsonMessage])
 
   useEffect(() => {
     scrollToBottom()
@@ -70,6 +92,11 @@ function RouteComponent() {
 
   const handleSend = () => {
     if (!prompt.trim()) return
+
+    sendJsonMessage({
+      type: "query",
+      message: prompt,
+    })
 
     const newMessage: Message = {
       id: crypto.randomUUID(),

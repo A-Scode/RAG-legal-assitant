@@ -17,6 +17,7 @@ logger = logging.getLogger('django')
 
 @task
 def chunk_and_store(doc_id: str):
+    logger.info(f"task started : chunking and storing document {doc_id}")
     doc = Document.objects.get(doc_id=doc_id)
     try:
         if not doc.verified or doc.file:

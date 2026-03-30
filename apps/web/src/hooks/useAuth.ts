@@ -4,6 +4,7 @@ import { useAuthStore, useUserStore } from "@/stores";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import queryClient from "@/api/queryClient";
 
 export const useLogin = () => {
   const naviate = useNavigate();
@@ -12,6 +13,8 @@ export const useLogin = () => {
     mutationFn: (data: { username: string; password: string }) =>
       endpoints.login(data.username, data.password),
     onSuccess: (data) => {
+      useUserStore.getState().clearUser();
+      queryClient.invalidateQueries({ queryKey: ["GetUser"] });
       useAuthStore.getState().setToken(data.data.access, data.data.refresh);
       toast.success("Logged in successfully");
       naviate({ to: "/app/chat" });
@@ -56,7 +59,6 @@ export const useForgotPassword = () => {
   });
 };
 
-
 export const useRegister = () => {
   return useMutation({
     mutationFn: (data: any) => endpoints.register(data),
@@ -72,8 +74,10 @@ export const useRegister = () => {
 
 export const useGetOtp = () => {
   return useMutation({
-    mutationFn: (data: { email: string; otp_type: "register" | "forget-password" }) =>
-      endpoints.getOtp(data.email, data.otp_type),
+    mutationFn: (data: {
+      email: string;
+      otp_type: "register" | "forget-password";
+    }) => endpoints.getOtp(data.email, data.otp_type),
     onSuccess: () => {
       toast.success("OTP sent to your email");
     },
@@ -84,31 +88,30 @@ export const useGetOtp = () => {
   });
 };
 
-
 export const useUpdateProfile = () => {
-    const { setUser } = useUserStore();
-    return useMutation({
-        mutationFn: (data: any) => endpoints.updateProfile(data),
-        onSuccess: (data) => {
-            setUser(data.data);
-            toast.success("Profile updated successfully");
-        },
-        onError: (error: any) => {
-            console.error(error);
-            toast.error(error.response?.data?.detail || "Failed to update profile");
-        },
-    });
+  const { setUser } = useUserStore();
+  return useMutation({
+    mutationFn: (data: any) => endpoints.updateProfile(data),
+    onSuccess: (data) => {
+      setUser(data.data);
+      toast.success("Profile updated successfully");
+    },
+    onError: (error: any) => {
+      console.error(error);
+      toast.error(error.response?.data?.detail || "Failed to update profile");
+    },
+  });
 };
 
 export const useClearHistory = () => {
-    return useMutation({
-        mutationFn: () => endpoints.deleteAllChatSessions(),
-        onSuccess: () => {
-            toast.success("All chat sessions cleared");
-        },
-        onError: (error: any) => {
-            console.error(error);
-            toast.error(error.response?.data?.detail || "Failed to clear history");
-        },
-    });
+  return useMutation({
+    mutationFn: () => endpoints.deleteAllChatSessions(),
+    onSuccess: () => {
+      toast.success("All chat sessions cleared");
+    },
+    onError: (error: any) => {
+      console.error(error);
+      toast.error(error.response?.data?.detail || "Failed to clear history");
+    },
+  });
 };
