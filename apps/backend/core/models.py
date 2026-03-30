@@ -6,8 +6,11 @@ from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.utils import timezone
 import docx
+from langchain_core.messages import AIMessage, HumanMessage
 import uuid6
 from django.db.models import F
+from django.conf import settings
+from channels.db import database_sync_to_async
 
         
 
@@ -31,7 +34,7 @@ class ChatSession(models.Model):
 class ChatMessage(models.Model):
     msg_id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
     session = models.ForeignKey(ChatSession, on_delete=models.CASCADE)
-    role = models.CharField(max_length=100)
+    role = models.CharField(max_length=100 , choices=[("user" , "user") , ("assistant" , "assistant")])
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -40,16 +43,30 @@ class ChatMessage(models.Model):
         return self.content
 
     @classmethod
-    def get_message_history(cls , session_id : str):
+    @database_sync_to_async
+    def get_message_history(cls, session_id: str):
         histroy = []
         messages = cls.objects.filter(session=session_id).order_by("created_at")
 
         for message in messages:
             histroy.append({
+                "id" : message.msg_id,
                 "role" : message.role,
                 "content" : message.content,
                 "created_at" : message.created_at,
+                "docs_refered" : DocumentRefered.get_document_refered(message.msg_id)
             })
+        return histroy
+    
+    @classmethod
+    @database_sync_to_async
+    def model_chat_context(cls, session_id: str):
+        histroy = []
+        messages = cls.objects.filter(session=session_id).order_by("created_at")
+
+        for message in messages:
+            if message.role == 'user':histroy.append(HumanMessage(content=message.content))
+            else:histroy.append(AIMessage(content=message.content))
         return histroy
 
     
@@ -101,11 +118,14 @@ class DocumentRefered(models.Model):
     pages = models.JSONField(default=list)
 
     @classmethod
+    @database_sync_to_async
     def get_document_refered(cls, msg_id: str):
+        # 1. Added 'doc_path' to the values query
         references = cls.objects.filter(message=msg_id).values(
             doc_pk=F('document__id'), 
             doc_id=F('document__doc_id'), 
             title=F('document__title'),
+            doc_path=F('document__file'), # Assuming the Field name is 'file'
             pages_list=F('pages') 
         )
 
@@ -115,13 +135,22 @@ class DocumentRefered(models.Model):
             d_id = ref['doc_id']
             
             if d_id not in grouped_docs:
+                # 2. Construct the full URL using settings.MEDIA_URL
+                # We use .lstrip('/') to avoid double slashes
+                relative_path = ref['doc_path']
+                full_url = f"{settings.MEDIA_URL}{relative_path}" if relative_path else None
+
                 grouped_docs[d_id] = {
                     "doc_id": d_id,
                     "title": ref['title'],
+                    "doc_url": full_url, # New parameter added here
                     "pages": []
                 }
         
             if ref['pages_list']:
-                combined_pages = set(grouped_docs[d_id]["pages"] + ref['pages_list'])
+                # Safe handling: ensure pages_list is iterable
+                current_pages = ref['pages_list'] if isinstance(ref['pages_list'], list) else []
+                combined_pages = set(grouped_docs[d_id]["pages"] + current_pages)
                 grouped_docs[d_id]["pages"] = sorted(list(combined_pages))
+                
         return list(grouped_docs.values())

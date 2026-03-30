@@ -5,7 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Textarea } from '@/components/ui/textarea'
 import { useAuthStore } from '@/stores'
 import { createFileRoute } from '@tanstack/react-router'
-import { SendHorizontal, User, Sparkles, Scale } from 'lucide-react'
+import { SendHorizontal, User, Sparkles, Scale, Loader2 } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import useWebSocket , {ReadyState} from 'react-use-websocket'
 import { toast } from 'sonner'
@@ -19,12 +19,33 @@ export const Route = createFileRoute('/app/chat/$chatSessionId')({
   },
 })
 
-type Message = {
+type DocRefred = {
+  doc_id : string,
+  doc_name : string,
+  doc_url : string,
+  pages : number[]
+}
+
+type HistoryMessage = {
   id: string
   role: 'user' | 'assistant'
   content: string
-  timestamp: Date
+  thinking?: string
+  status?: string
+  created_at: Date,
+  docs_refered : DocRefred[],
 }
+
+type StreamMessage = { stage : "thinking" , content : string , isEnd : boolean }
+| { stage : "tool_calling" , tool : string }
+| { stage : "answer" , content : string , isEnd : boolean }
+| { stage : "done" , content : string , docs_refered : DocRefred[]  }
+| { stage : "error" , error : string , isEnd : boolean }
+
+type SocketMessage = { type : "stream" , data : StreamMessage }
+| { type : "history" , data : HistoryMessage[] }
+
+
 
 const WEBSOCKET_URL = import.meta.env.VITE_WEBSOCKET_BASE_URL
 
@@ -33,22 +54,26 @@ function RouteComponent() {
   const {chatSessionId} = Route.useParams()
   const [prompt, setPrompt] = useState('')
   const {token} = useAuthStore()
-  const [messages, setMessages] = useState<Message[]>([
+  const [messages, setMessages] = useState<HistoryMessage[]>([
     {
       id: '1',
       role: 'assistant',
       content: "Hello! I'm your Legal Assistant. I can help you analyze documents, draft agreements, or answer legal queries based on your uploaded library. How can I assist you today?",
-      timestamp: new Date(),
+      thinking: "",
+      status: undefined,
+      created_at: new Date(),
+      docs_refered : []
     },
   ])
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const initialPromptSent = useRef(false)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const {sendJsonMessage , lastJsonMessage , readyState } = useWebSocket(`${WEBSOCKET_URL}${chatSessionId}/?token=${token}`,{
+  const {sendJsonMessage , lastJsonMessage , readyState } = useWebSocket<SocketMessage>(`${WEBSOCKET_URL}${chatSessionId}/?token=${token}`,{
     shouldReconnect: () => true,  
     reconnectAttempts: 10,
     reconnectInterval: 3000,
@@ -60,7 +85,57 @@ function RouteComponent() {
   } , [readyState])
 
   useEffect(()=>{
-    console.log(lastJsonMessage)
+    if (!lastJsonMessage) return
+
+    if (lastJsonMessage.type === 'history') {
+      const historyData = lastJsonMessage.data.map((msg: any) => ({
+        ...msg,
+        created_at: new Date(msg.created_at)
+      }))
+      setMessages(historyData)
+    } else if (lastJsonMessage.type === 'stream') {
+      const streamData = lastJsonMessage.data as StreamMessage
+
+      setMessages((prev) => {
+        const newMessages = [...prev]
+        const lastMsg = newMessages[newMessages.length - 1]
+
+        let currentMsg;
+        if (!lastMsg || lastMsg.role !== 'assistant') {
+          currentMsg = {
+            id: crypto.randomUUID(),
+            role: 'assistant' as const,
+            content: '',
+            thinking: '',
+            status: 'Thinking...',
+            created_at: new Date(),
+            docs_refered: []
+          }
+          newMessages.push(currentMsg)
+        } else {
+          // Clone the last message to avoid mutating the original object in Strict Mode
+          currentMsg = { ...lastMsg }
+          newMessages[newMessages.length - 1] = currentMsg
+        }
+
+        if (streamData.stage === 'answer') {
+          currentMsg.content += streamData.content
+          currentMsg.status = 'Generating response...'
+        } else if (streamData.stage === 'thinking') {
+          if (!currentMsg.thinking) currentMsg.thinking = ''
+          currentMsg.thinking += streamData.content
+          currentMsg.status = 'Analyzing context...'
+        } else if (streamData.stage === 'tool_calling') {
+          currentMsg.status = `Running ${streamData.tool}...`
+        } else if (streamData.stage === 'done') {
+          currentMsg.status = undefined
+          if (streamData.docs_refered) {
+             currentMsg.docs_refered = streamData.docs_refered
+          }
+        }
+        return newMessages
+      })
+    }
   }, [lastJsonMessage])
 
   useEffect(() => {
@@ -69,26 +144,32 @@ function RouteComponent() {
 
   // Handle initial prompt from navigation
   useEffect(() => {
-    if (initialPrompt && messages.length === 1) {
-      const newMessage: Message = {
+    if (initialPrompt && !initialPromptSent.current && readyState === ReadyState.OPEN) {
+      initialPromptSent.current = true
+      const newMessage: HistoryMessage = {
         id: crypto.randomUUID(),
         role: 'user',
         content: initialPrompt,
-        timestamp: new Date(),
+        created_at: new Date(),
+        docs_refered : []
       }
-      setMessages((prev) => [...prev, newMessage])
       
-      setTimeout(() => {
-        const assistantMessage: Message = {
-          id: crypto.randomUUID(),
-          role: 'assistant',
-          content: "I've received your query about \"" + initialPrompt + "\". I'm processing your request using the legal context provided...",
-          timestamp: new Date(),
-        }
-        setMessages((prev) => [...prev, assistantMessage])
-      }, 1000)
+      sendJsonMessage({
+        type: "query",
+        message: initialPrompt,
+      })
+
+      setMessages((prev) => [...prev, newMessage, {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: '',
+        thinking: '',
+        status: 'Thinking...',
+        created_at: new Date(),
+        docs_refered : []
+      }])
     }
-  }, [initialPrompt])
+  }, [initialPrompt, readyState])
 
   const handleSend = () => {
     if (!prompt.trim()) return
@@ -98,25 +179,24 @@ function RouteComponent() {
       message: prompt,
     })
 
-    const newMessage: Message = {
+    const newMessage: HistoryMessage = {
       id: crypto.randomUUID(),
       role: 'user',
       content: prompt,
-      timestamp: new Date(),
+      created_at: new Date(),
+      docs_refered : []
     }
 
-    setMessages((prev) => [...prev, newMessage])
+    setMessages((prev) => [...prev, newMessage, {
+      id: crypto.randomUUID(),
+      role: 'assistant',
+      content: '',
+      thinking: '',
+      status: 'Thinking...',
+      created_at: new Date(),
+      docs_refered : []
+    }])
     setPrompt('')
-
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: "I've received your query about \"" + prompt + "\". I'm processing your request using the legal context provided...",
-        timestamp: new Date(),
-      }
-      setMessages((prev) => [...prev, assistantMessage])
-    }, 1000)
   }
 
   return (
@@ -152,19 +232,42 @@ function RouteComponent() {
                 <div className={`flex flex-col gap-2 max-w-[85%] ${
                   message.role === 'assistant' ? 'items-start' : 'items-end'
                 }`}>
+                  
+                  {message.status && message.role === 'assistant' && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/5 text-primary text-xs font-medium rounded-full animate-pulse border border-primary/20 shadow-sm w-fit mb-1 transition-all duration-300">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      {message.status}
+                    </div>
+                  )}
+
                   <div className={`rounded-2xl px-4 py-3 text-sm shadow-sm ${
                   message.role === 'assistant' 
                     ? 'bg-card text-card-foreground border rounded-tl-none' 
                     : 'bg-primary text-primary-foreground border-primary rounded-tr-none'
                 }`}>
                   {message.role === 'assistant' ? (
-                    <Markdown content={message.content} />
+                    <div className="space-y-4">
+                      {message.thinking && (
+                        <details className="text-sm bg-muted/50 rounded-lg p-3 text-muted-foreground border border-border/50 group [&_summary::-webkit-details-marker]:hidden">
+                          <summary className="font-medium cursor-pointer flex items-center gap-2 select-none hover:text-foreground">
+                            <Sparkles className="w-3 h-3 text-primary" />
+                            Thinking Process
+                            <span className="ml-auto text-xs text-muted-foreground group-open:hidden">Show</span>
+                            <span className="ml-auto text-xs text-muted-foreground hidden group-open:block">Hide</span>
+                          </summary>
+                          <div className="pt-3 border-t border-border/50 mt-2">
+                            <Markdown content={message.thinking} />
+                          </div>
+                        </details>
+                      )}
+                      {message.content && <Markdown content={message.content} />}
+                    </div>
                   ) : (
                     <div className="whitespace-pre-wrap">{message.content}</div>
                   )}
                 </div>
                   <span className="text-[10px] text-muted-foreground px-1">
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {message.created_at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
               </div>

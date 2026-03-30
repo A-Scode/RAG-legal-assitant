@@ -38,28 +38,25 @@ class ChatConsumer(AsyncWebsocketConsumer):
         logger.info(f"received: {text_data}")
         data = json.loads(text_data)
         message = data['message']
-        await generate_llm_response(message , self.room_group_name)
+        await generate_llm_response(message , self.room_group_name , self.scope['url_route']['kwargs']['session_id'])
 
-    async def chat_message(self, event):
+    async def stream_message(self, event):
         message = event['message']
+        data = {
+            'type' : 'stream',
+            'data' : message
+        }
+        logger.info(f"stream_message: {message}")
+
+        await self.send(text_data=json.dumps(data))
+    
+    async def history_message(self , event):
+        message = event['message']
+        data = {
+            'type' : 'history',
+            'data' : message
+        }
+        logger.info(f"history_message: {message}")
+
+        await self.send(text_data=json.dumps(data))
         
-        await self.send(text_data=json.dumps({
-            "type" : "chat_message",
-            'message': message
-        }))
-
-    async def stream_status_message(self , event):
-        status = event['stream_status']
-
-        await self.send(text_data=json.dumps({
-            'type' : "stream_status",
-            'stream_status': status # can be 1-start, 0-end
-        }))
-
-    async def chunk_message(self , event):
-        chunk = event['chunk']
-
-        await self.send(text_data=json.dumps({
-            'type' : "chunk_message",
-            'chunk': chunk
-        }))
