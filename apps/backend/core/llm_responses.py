@@ -20,7 +20,7 @@ async def generate_llm_response(query: str , room_group_name: str , session_id: 
     }, version="v2"):
         kind = event["event"]
 
-        # logger.info(f"event: {event}")
+        logger.info(f"event: {event}")
         
         if kind == "on_chat_model_stream":
             chunk = event["data"]["chunk"]

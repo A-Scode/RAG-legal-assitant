@@ -1,4 +1,5 @@
 import json
+import asyncio
 from channels.auth import UserLazyObject
 from channels.generic.websocket import AsyncWebsocketConsumer
 import logging
@@ -38,7 +39,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         logger.info(f"received: {text_data}")
         data = json.loads(text_data)
         message = data['message']
-        await generate_llm_response(message , self.room_group_name , self.scope['url_route']['kwargs']['session_id'])
+        asyncio.create_task(generate_llm_response(message , self.room_group_name , self.scope['url_route']['kwargs']['session_id']))
 
     async def stream_message(self, event):
         message = event['message']

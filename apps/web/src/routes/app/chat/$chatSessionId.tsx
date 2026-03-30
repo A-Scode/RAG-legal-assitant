@@ -73,70 +73,73 @@ function RouteComponent() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const {sendJsonMessage , lastJsonMessage , readyState } = useWebSocket<SocketMessage>(`${WEBSOCKET_URL}${chatSessionId}/?token=${token}`,{
+  const {sendJsonMessage , readyState } = useWebSocket<SocketMessage>(`${WEBSOCKET_URL}${chatSessionId}/?token=${token}`,{
     shouldReconnect: () => true,  
     reconnectAttempts: 10,
     reconnectInterval: 3000,
-  })
+    onMessage: (event) => {
+      try {
+        const lastJsonMessage = JSON.parse(event.data) as SocketMessage
+        // console.log("WS RECV:", lastJsonMessage.type, lastJsonMessage.data)
+        
+        if (lastJsonMessage.type === 'history') {
+          const historyData = lastJsonMessage.data.map((msg: any) => ({
+            ...msg,
+            created_at: new Date(msg.created_at)
+          }))
+          setMessages(historyData)
+        } else if (lastJsonMessage.type === 'stream') {
+          const streamData = lastJsonMessage.data as StreamMessage
 
+          setMessages((prev) => {
+            const newMessages = [...prev]
+            const lastMsg = newMessages[newMessages.length - 1]
+
+            let currentMsg;
+            if (!lastMsg || lastMsg.role !== 'assistant') {
+              currentMsg = {
+                id: crypto.randomUUID(),
+                role: 'assistant' as const,
+                content: '',
+                thinking: '',
+                status: 'Thinking...',
+                created_at: new Date(),
+                docs_refered: []
+              }
+              newMessages.push(currentMsg)
+            } else {
+              // Clone the last message to avoid mutating the original object in Strict Mode
+              currentMsg = { ...lastMsg }
+              newMessages[newMessages.length - 1] = currentMsg
+            }
+
+            if (streamData.stage === 'answer') {
+              currentMsg.content += streamData.content
+              currentMsg.status = 'Generating response...'
+            } else if (streamData.stage === 'thinking') {
+              if (!currentMsg.thinking) currentMsg.thinking = ''
+              currentMsg.thinking += streamData.content
+              currentMsg.status = 'Analyzing context...'
+            } else if (streamData.stage === 'tool_calling') {
+              currentMsg.status = `Running ${streamData.tool}...`
+            } else if (streamData.stage === 'done') {
+              currentMsg.status = undefined
+              if (streamData.docs_refered) {
+                 currentMsg.docs_refered = streamData.docs_refered
+              }
+            }
+            return newMessages
+          })
+        }
+      } catch (e) {
+        console.error("Failed to parse websocket message", e)
+      }
+    }
+  })
 
   useEffect(()=>{
     toast.info(`Connection Status: ${ReadyState[readyState]}`)
   } , [readyState])
-
-  useEffect(()=>{
-    if (!lastJsonMessage) return
-
-    if (lastJsonMessage.type === 'history') {
-      const historyData = lastJsonMessage.data.map((msg: any) => ({
-        ...msg,
-        created_at: new Date(msg.created_at)
-      }))
-      setMessages(historyData)
-    } else if (lastJsonMessage.type === 'stream') {
-      const streamData = lastJsonMessage.data as StreamMessage
-
-      setMessages((prev) => {
-        const newMessages = [...prev]
-        const lastMsg = newMessages[newMessages.length - 1]
-
-        let currentMsg;
-        if (!lastMsg || lastMsg.role !== 'assistant') {
-          currentMsg = {
-            id: crypto.randomUUID(),
-            role: 'assistant' as const,
-            content: '',
-            thinking: '',
-            status: 'Thinking...',
-            created_at: new Date(),
-            docs_refered: []
-          }
-          newMessages.push(currentMsg)
-        } else {
-          // Clone the last message to avoid mutating the original object in Strict Mode
-          currentMsg = { ...lastMsg }
-          newMessages[newMessages.length - 1] = currentMsg
-        }
-
-        if (streamData.stage === 'answer') {
-          currentMsg.content += streamData.content
-          currentMsg.status = 'Generating response...'
-        } else if (streamData.stage === 'thinking') {
-          if (!currentMsg.thinking) currentMsg.thinking = ''
-          currentMsg.thinking += streamData.content
-          currentMsg.status = 'Analyzing context...'
-        } else if (streamData.stage === 'tool_calling') {
-          currentMsg.status = `Running ${streamData.tool}...`
-        } else if (streamData.stage === 'done') {
-          currentMsg.status = undefined
-          if (streamData.docs_refered) {
-             currentMsg.docs_refered = streamData.docs_refered
-          }
-        }
-        return newMessages
-      })
-    }
-  }, [lastJsonMessage])
 
   useEffect(() => {
     scrollToBottom()

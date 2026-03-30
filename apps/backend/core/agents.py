@@ -7,6 +7,7 @@ thinking_model = ChatOpenAI(
     model="qwen3.5-9b",
     api_key="",        
     temperature=0.7,
+    streaming=True,
     extra_body={"include_reasoning": True}
 )
 
