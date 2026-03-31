@@ -5,10 +5,18 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Textarea } from '@/components/ui/textarea'
 import { useAuthStore } from '@/stores'
 import { createFileRoute } from '@tanstack/react-router'
-import { SendHorizontal, User, Sparkles, Scale, Loader2 } from 'lucide-react'
+import { SendHorizontal, User, Sparkles, Scale, Loader2, BookOpen, Search, FileText, ChevronRight, X } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
-import useWebSocket , {ReadyState} from 'react-use-websocket'
+import useWebSocket, { ReadyState } from 'react-use-websocket'
 import { toast } from 'sonner'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet"
+import { DocumentViewer } from "@/components/document-viewer"
 
 export const Route = createFileRoute('/app/chat/$chatSessionId')({
   component: RouteComponent,
@@ -55,18 +63,9 @@ function RouteComponent() {
   const {chatSessionId} = Route.useParams()
   const [prompt, setPrompt] = useState('')
   const {token} = useAuthStore()
-  const [messages, setMessages] = useState<HistoryMessage[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: "Hello! I'm your Legal Assistant. I can help you analyze documents, draft agreements, or answer legal queries based on your uploaded library. How can I assist you today?",
-      thinking: "",
-      status: undefined,
-      created_at: new Date(),
-      docs_refered : []
-    },
-  ])
-
+  const [messages, setMessages] = useState<HistoryMessage[]>([])
+  const [selectedDoc, setSelectedDoc] = useState<{ url: string, title: string, page?: number } | null>(null)
+  const [isViewerOpen, setIsViewerOpen] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const initialPromptSent = useRef(false)
 
@@ -272,14 +271,19 @@ function RouteComponent() {
                             <Scale className="w-3 h-3" />
                             Document References
                           </h4>
-                          <div className="flex flex-wrap gap-2">
+                           <div className="flex flex-wrap gap-2">
                             {message.docs_refered.map((doc) => (
-                              <a
+                              <button
                                 key={doc.doc_id}
-                                href={API_ORIGIN + doc.doc_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 px-2 py-1 bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded-md text-[11px] font-medium text-primary transition-colors group"
+                                onClick={() => {
+                                  setSelectedDoc({
+                                    url: API_ORIGIN + doc.doc_url,
+                                    title: doc.title,
+                                    page: doc.pages?.[0]
+                                  })
+                                  setIsViewerOpen(true)
+                                }}
+                                className="flex items-center gap-2 px-2 py-1 bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded-md text-[11px] font-medium text-primary transition-colors group text-left"
                               >
                                 <span className="truncate max-w-[150px]">{doc.title}</span>
                                 {doc.pages && doc.pages.length > 0 && (
@@ -287,7 +291,7 @@ function RouteComponent() {
                                     P{doc.pages.join(', ')}
                                   </span>
                                 )}
-                              </a>
+                              </button>
                             ))}
                           </div>
                         </div>
@@ -348,6 +352,35 @@ function RouteComponent() {
           </p>
         </div>
       </div>
+
+      {/* Document Viewer Sheet */}
+      <Sheet open={isViewerOpen} onOpenChange={setIsViewerOpen}>
+        <SheetContent side="right" className="min-w-[50vw] w-full sm:max-w-[50vw] p-0 flex flex-col border-l shadow-2xl transition-all duration-500 ease-in-out">
+          <SheetHeader className="p-4 border-b bg-background/80 backdrop-blur sticky top-0 z-30">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <SheetTitle className="text-sm font-bold flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-primary" />
+                  {selectedDoc?.title || 'Document Viewer'}
+                </SheetTitle>
+                <SheetDescription className="text-[10px] uppercase tracking-wider font-semibold opacity-70">
+                  Legal Reference Material
+                </SheetDescription>
+              </div>
+            </div>
+          </SheetHeader>
+          
+          <div className="flex-1 overflow-hidden relative">
+            {selectedDoc && (
+              <DocumentViewer 
+                url={selectedDoc.url} 
+                initialPage={selectedDoc.page} 
+                className="border-0 rounded-none shadow-none"
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

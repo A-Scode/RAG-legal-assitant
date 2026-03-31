@@ -15,6 +15,7 @@ import { Route as AppRegisterRouteImport } from './routes/app/register'
 import { Route as AppProfileRouteImport } from './routes/app/profile'
 import { Route as AppLoginRouteImport } from './routes/app/login'
 import { Route as AppForgotPasswordRouteImport } from './routes/app/forgot-password'
+import { Route as AppDocumentsRouteImport } from './routes/app/documents'
 import { Route as AppChatRouteImport } from './routes/app/chat'
 import { Route as AppChatIndexRouteImport } from './routes/app/chat/index'
 import { Route as AppChatChatSessionIdRouteImport } from './routes/app/chat/$chatSessionId'
@@ -49,6 +50,11 @@ const AppForgotPasswordRoute = AppForgotPasswordRouteImport.update({
   path: '/app/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppDocumentsRoute = AppDocumentsRouteImport.update({
+  id: '/app/documents',
+  path: '/app/documents',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppChatRoute = AppChatRouteImport.update({
   id: '/app/chat',
   path: '/app/chat',
@@ -68,6 +74,7 @@ const AppChatChatSessionIdRoute = AppChatChatSessionIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app/chat': typeof AppChatRouteWithChildren
+  '/app/documents': typeof AppDocumentsRoute
   '/app/forgot-password': typeof AppForgotPasswordRoute
   '/app/login': typeof AppLoginRoute
   '/app/profile': typeof AppProfileRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/app/documents': typeof AppDocumentsRoute
   '/app/forgot-password': typeof AppForgotPasswordRoute
   '/app/login': typeof AppLoginRoute
   '/app/profile': typeof AppProfileRoute
@@ -90,6 +98,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app/chat': typeof AppChatRouteWithChildren
+  '/app/documents': typeof AppDocumentsRoute
   '/app/forgot-password': typeof AppForgotPasswordRoute
   '/app/login': typeof AppLoginRoute
   '/app/profile': typeof AppProfileRoute
@@ -103,6 +112,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/app/chat'
+    | '/app/documents'
     | '/app/forgot-password'
     | '/app/login'
     | '/app/profile'
@@ -113,6 +123,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/app/documents'
     | '/app/forgot-password'
     | '/app/login'
     | '/app/profile'
@@ -124,6 +135,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/app/chat'
+    | '/app/documents'
     | '/app/forgot-password'
     | '/app/login'
     | '/app/profile'
@@ -136,6 +148,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppChatRoute: typeof AppChatRouteWithChildren
+  AppDocumentsRoute: typeof AppDocumentsRoute
   AppForgotPasswordRoute: typeof AppForgotPasswordRoute
   AppLoginRoute: typeof AppLoginRoute
   AppProfileRoute: typeof AppProfileRoute
@@ -187,6 +200,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/documents': {
+      id: '/app/documents'
+      path: '/app/documents'
+      fullPath: '/app/documents'
+      preLoaderRoute: typeof AppDocumentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/chat': {
       id: '/app/chat'
       path: '/app/chat'
@@ -227,6 +247,7 @@ const AppChatRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppChatRoute: AppChatRouteWithChildren,
+  AppDocumentsRoute: AppDocumentsRoute,
   AppForgotPasswordRoute: AppForgotPasswordRoute,
   AppLoginRoute: AppLoginRoute,
   AppProfileRoute: AppProfileRoute,

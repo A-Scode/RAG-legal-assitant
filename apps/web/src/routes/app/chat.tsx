@@ -11,7 +11,7 @@ import { cn, logout, formatRelativeDate } from '@/lib/utils'
 import { useAuthStore, useUserStore } from '@/stores'
 import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Outlet, redirect, useNavigate, useParams } from '@tanstack/react-router'
-import { CreditCard, History, LogOut, MessageSquare, MoreVertical, PanelLeftClose, PanelLeftOpen, Pencil, Plus, Sparkles, Trash2, User } from 'lucide-react'
+import { CreditCard, History, LogOut, MessageSquare, MoreVertical, PanelLeftClose, PanelLeftOpen, Pencil, Plus, Search, Sparkles, Trash2, User } from 'lucide-react'
 import { createContext, useContext, useEffect, useState } from 'react'
 
 export interface ChatLayoutContextType {
@@ -117,7 +117,7 @@ function RouteComponent() {
             </Tooltip>
           </div>
 
-          <div className="p-4 shrink-0 overflow-hidden">
+          <div className="p-4 shrink-0 space-y-2 overflow-hidden">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button className={cn("w-full gap-2 transition-all duration-300", sidebarOpen ? "justify-start px-4" : "justify-center px-0")} size="lg" onClick={() => navigate({to:"/app/chat"})}>
@@ -126,6 +126,21 @@ function RouteComponent() {
                 </Button>
               </TooltipTrigger>
               {!sidebarOpen && <TooltipContent side="right">New Chat</TooltipContent>}
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline"
+                  className={cn("w-full gap-2 transition-all duration-300 border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 hover:border-primary/40", sidebarOpen ? "justify-start px-4" : "justify-center px-0")} 
+                  size="lg" 
+                  onClick={() => navigate({to:"/app/documents"})}
+                >
+                  <Search className="w-4 h-4 shrink-0" />
+                  {sidebarOpen && <span className="truncate text-[10px] font-black uppercase tracking-widest">Search Docs</span>}
+                </Button>
+              </TooltipTrigger>
+              {!sidebarOpen && <TooltipContent side="right">Search Documents</TooltipContent>}
             </Tooltip>
           </div>
 

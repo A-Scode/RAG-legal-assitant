@@ -19,7 +19,7 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.conf.urls.static import static
 from django.conf import settings
-from .views import UserProfileView , RegisterView , LoginView , GetOTPView , ChatSessionViewSet
+from .views import UserProfileView , RegisterView , LoginView , GetOTPView , ChatSessionViewSet, DocumentViewSet
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework import routers
 from django.urls import include
@@ -27,6 +27,7 @@ from django.urls import include
 router = routers.DefaultRouter()
 
 router.register(r'chat-sessions', ChatSessionViewSet, basename='chat-session')
+router.register(r'documents', DocumentViewSet, basename='document')
 
 
 urlpatterns = [
