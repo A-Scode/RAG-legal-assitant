@@ -73,7 +73,7 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
     def clear_all(self, request):
         ChatSession.objects.filter(user=request.user).delete()
         return Response(status=204)
-    
+
     
     
     

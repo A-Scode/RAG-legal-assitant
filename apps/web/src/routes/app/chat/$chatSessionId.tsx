@@ -21,7 +21,7 @@ export const Route = createFileRoute('/app/chat/$chatSessionId')({
 
 type DocRefred = {
   doc_id : string,
-  doc_name : string,
+  title : string,
   doc_url : string,
   pages : number[]
 }
@@ -48,6 +48,7 @@ type SocketMessage = { type : "stream" , data : StreamMessage }
 
 
 const WEBSOCKET_URL = import.meta.env.VITE_WEBSOCKET_BASE_URL
+const API_ORIGIN = import.meta.env.VITE_API_ORIGIN
 
 function RouteComponent() {
   const { prompt: initialPrompt } = Route.useSearch()
@@ -80,7 +81,7 @@ function RouteComponent() {
     onMessage: (event) => {
       try {
         const lastJsonMessage = JSON.parse(event.data) as SocketMessage
-        // console.log("WS RECV:", lastJsonMessage.type, lastJsonMessage.data)
+        console.log("WS RECV:", lastJsonMessage.type, lastJsonMessage.data)
         
         if (lastJsonMessage.type === 'history') {
           const historyData = lastJsonMessage.data.map((msg: any) => ({
@@ -264,6 +265,33 @@ function RouteComponent() {
                         </details>
                       )}
                       {message.content && <Markdown content={message.content} />}
+                      
+                      {message.docs_refered && message.docs_refered.length > 0 && (
+                        <div className="pt-4 border-t border-border/50 space-y-2">
+                          <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                            <Scale className="w-3 h-3" />
+                            Document References
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {message.docs_refered.map((doc) => (
+                              <a
+                                key={doc.doc_id}
+                                href={API_ORIGIN + doc.doc_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 px-2 py-1 bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded-md text-[11px] font-medium text-primary transition-colors group"
+                              >
+                                <span className="truncate max-w-[150px]">{doc.title}</span>
+                                {doc.pages && doc.pages.length > 0 && (
+                                  <span className="text-[9px] bg-primary/10 px-1 rounded">
+                                    P{doc.pages.join(', ')}
+                                  </span>
+                                )}
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="whitespace-pre-wrap">{message.content}</div>

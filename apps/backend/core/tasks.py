@@ -50,15 +50,20 @@ def chunk_and_store(doc_id: str):
             points = []
             logger.info("embedding document")
             for chunk in chunks : 
-                vector = embed_text(chunk.text)
+                # Skip chunks that are mostly empty or just underscores/lines
+                text = chunk.text.strip()
+                if not text or not text.replace('_', '').replace('-', '').strip():
+                    continue
+
+                vector = embed_text(text, is_query=False)
                 points.append(
                     PointStruct(
                         id=str(uuid6.uuid7()),
                         vector=vector,
                         payload={
                             "title" : doc.title,
-                            "text": chunk.text,
-                            "document_id": str(doc.doc_id),
+                            "text": text,
+                            "doc_id": str(doc.doc_id),
                             "page_numbers" : list(set(
                                 p.page_no for item in chunk.meta.doc_items 
                                 for p in item.prov if hasattr(p, 'page_no')

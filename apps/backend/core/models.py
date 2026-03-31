@@ -50,10 +50,10 @@ class ChatMessage(models.Model):
 
         for message in messages:
             histroy.append({
-                "id" : message.msg_id,
+                "id" : str(message.msg_id),
                 "role" : message.role,
                 "content" : message.content,
-                "created_at" : message.created_at,
+                "created_at" : message.created_at.isoformat(),
                 "docs_refered" : DocumentRefered.get_document_refered(message.msg_id)
             })
         return histroy
@@ -118,11 +118,10 @@ class DocumentRefered(models.Model):
     pages = models.JSONField(default=list)
 
     @classmethod
-    @database_sync_to_async
     def get_document_refered(cls, msg_id: str):
         # 1. Added 'doc_path' to the values query
         references = cls.objects.filter(message=msg_id).values(
-            doc_pk=F('document__id'), 
+            doc_pk=F('document__doc_id'), 
             doc_id=F('document__doc_id'), 
             title=F('document__title'),
             doc_path=F('document__file'), # Assuming the Field name is 'file'
@@ -141,7 +140,7 @@ class DocumentRefered(models.Model):
                 full_url = f"{settings.MEDIA_URL}{relative_path}" if relative_path else None
 
                 grouped_docs[d_id] = {
-                    "doc_id": d_id,
+                    "doc_id": str(d_id),
                     "title": ref['title'],
                     "doc_url": full_url, # New parameter added here
                     "pages": []

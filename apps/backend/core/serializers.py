@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, OTP , ChatSession
+from .models import User, OTP , ChatSession, Document
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 import random
@@ -111,3 +111,10 @@ class ChatSessionSerializer(serializers.ModelSerializer):
         instance.title = attrs.get('title' , instance.title)
         instance.save()
         return instance
+
+class DocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Document
+        fields = ['doc_id', 'title', 'content', 'created_at', 'file' , 'embedding_status' , 'verified']
+
+    

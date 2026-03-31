@@ -19,8 +19,9 @@ def convert_docx_to_text(file_path: str) -> ConversionResult:
     return docling_converter.convert(file_path)
 
 
-def embed_text(text: str) -> List[float]:
-    return embeddings.embed_query(f"Represent this query for retrieving relevant documents: {text}")
+def embed_text(text: str, is_query: bool = True) -> List[float]:
+    prefix = "Represent this query for retrieving relevant documents: " if is_query else ""
+    return embeddings.embed_query(f"{prefix}{text}")
 
 
 

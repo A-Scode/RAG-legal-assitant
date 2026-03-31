@@ -4,6 +4,8 @@ from channels.auth import UserLazyObject
 from channels.generic.websocket import AsyncWebsocketConsumer
 import logging
 
+from .models import ChatMessage
+
 from .services import clean_group_name
 
 from .llm_responses import generate_llm_response
@@ -28,6 +30,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.accept()
         logger.info("user connected")
 
+        history = await ChatMessage.get_message_history(self.scope['url_route']['kwargs']['session_id'])
+        
+        logger.info(f"history: {history}")
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'history_message',
+                'message': history
+            }
+        )
+
     async def disconnect(self, code):
         logger.info("disconnecting")
         await self.channel_layer.group_discard(
@@ -39,7 +52,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         logger.info(f"received: {text_data}")
         data = json.loads(text_data)
         message = data['message']
-        asyncio.create_task(generate_llm_response(message , self.room_group_name , self.scope['url_route']['kwargs']['session_id']))
+        _ = asyncio.create_task(generate_llm_response(message , self.room_group_name , self.scope['url_route']['kwargs']['session_id'], self.user.id))
 
     async def stream_message(self, event):
         message = event['message']
