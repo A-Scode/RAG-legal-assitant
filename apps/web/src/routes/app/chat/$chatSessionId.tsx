@@ -5,7 +5,8 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Textarea } from '@/components/ui/textarea'
 import { useAuthStore } from '@/stores'
 import { createFileRoute } from '@tanstack/react-router'
-import { SendHorizontal, User, Sparkles, Scale, Loader2, BookOpen, Search, FileText, ChevronRight, X } from 'lucide-react'
+import { SendHorizontal, User, Sparkles, Scale, Loader2, BookOpen, Search, FileText, ChevronRight, X, FileDown } from 'lucide-react'
+import { exportElementToPdf } from '@/lib/pdf-utils'
 import { useState, useRef, useEffect } from 'react'
 import useWebSocket, { ReadyState } from 'react-use-websocket'
 import { toast } from 'sonner'
@@ -263,7 +264,28 @@ function RouteComponent() {
                           </div>
                         </details>
                       )}
-                      {message.content && <Markdown content={message.content} />}
+                      {message.content && (
+                        <div className="relative group/content">
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            className="absolute -top-1 -right-1 opacity-0 group-hover/content:opacity-100 transition-opacity z-10 hover:bg-primary/10 hover:text-primary h-7 w-7 rounded-md"
+                            title="Download as PDF"
+                            onClick={() => {
+                              const el = document.getElementById(`content-${message.id}`)
+                              if (el) {
+                                exportElementToPdf(el, {
+                                  filename: `legal-answer-${message.id.slice(0, 8)}.pdf`,
+                                  title: `AI Response - ${new Date().toLocaleDateString()}`
+                                })
+                              }
+                            }}
+                          >
+                            <FileDown className="w-3.5 h-3.5" />
+                          </Button>
+                          <Markdown id={`content-${message.id}`} content={message.content} />
+                        </div>
+                      )}
                       
                       {message.docs_refered && message.docs_refered.length > 0 && (
                         <div className="pt-4 border-t border-border/50 space-y-2">

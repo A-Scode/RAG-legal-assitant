@@ -7,11 +7,15 @@ import { cn } from '@/lib/utils'
 interface MarkdownProps {
   content: string
   className?: string
+  id?: string
 }
 
-export function Markdown({ content, className }: MarkdownProps) {
+export function Markdown({ content, className, id }: MarkdownProps) {
   return (
-    <div className={cn("prose prose-sm dark:prose-invert max-w-none break-words leading-relaxed", className)}>
+    <div 
+      id={id}
+      className={cn("prose prose-sm dark:prose-invert max-w-none break-words leading-relaxed", className)}
+    >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
