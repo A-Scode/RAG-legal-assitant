@@ -3,9 +3,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Textarea } from '@/components/ui/textarea'
-import { useAuthStore } from '@/stores'
+import { useAuthStore, useChatStore } from '@/stores'
+import type { DocRefred, HistoryMessage } from '@/stores/chatStore'
 import { createFileRoute } from '@tanstack/react-router'
-import { SendHorizontal, User, Sparkles, Scale, Loader2, BookOpen, Search, FileText, ChevronRight, X, FileDown } from 'lucide-react'
+import { SendHorizontal, User, Sparkles, Scale, Loader2, BookOpen, FileDown } from 'lucide-react'
 import { exportElementToPdf } from '@/lib/pdf-utils'
 import { useState, useRef, useEffect } from 'react'
 import useWebSocket, { ReadyState } from 'react-use-websocket'
@@ -28,23 +29,6 @@ export const Route = createFileRoute('/app/chat/$chatSessionId')({
   },
 })
 
-type DocRefred = {
-  doc_id : string,
-  title : string,
-  doc_url : string,
-  pages : number[]
-}
-
-type HistoryMessage = {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  thinking?: string
-  status?: string
-  created_at: Date,
-  docs_refered : DocRefred[],
-}
-
 type StreamMessage = { stage : "thinking" , content : string , isEnd : boolean }
 | { stage : "tool_calling" , tool : string }
 | { stage : "answer" , content : string , isEnd : boolean }
@@ -64,11 +48,18 @@ function RouteComponent() {
   const {chatSessionId} = Route.useParams()
   const [prompt, setPrompt] = useState('')
   const {token} = useAuthStore()
-  const [messages, setMessages] = useState<HistoryMessage[]>([])
+  
+  // Store management
+  const messages = useChatStore(state => state.getMessages(chatSessionId))
+  const setMessages = (m: any) => useChatStore.getState().setMessages(chatSessionId, m)
+  const hasHistoryLoaded = useChatStore(state => state.getHasHistoryLoaded(chatSessionId))
+  const setHasHistoryLoaded = (l: boolean) => useChatStore.getState().setHasHistoryLoaded(chatSessionId, l)
+  const initialPromptSent = useChatStore(state => state.getInitialPromptSent(chatSessionId))
+  const setInitialPromptSent = (s: boolean) => useChatStore.getState().setInitialPromptSent(chatSessionId, s)
+
   const [selectedDoc, setSelectedDoc] = useState<{ url: string, title: string, page?: number } | null>(null)
   const [isViewerOpen, setIsViewerOpen] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const initialPromptSent = useRef(false)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -88,11 +79,30 @@ function RouteComponent() {
             ...msg,
             created_at: new Date(msg.created_at)
           }))
-          setMessages(historyData)
+          
+          setMessages((prev: HistoryMessage[]) => {
+            // Filter local messages to keep only those that are truly unique or still in-progress
+            const ongoingMessages = prev.filter(localMsg => {
+              // If a message is still "active" (streaming/thinking), keep it
+              if (localMsg.status) return true;
+
+              // Check if history already contains this message by ID or by content + role
+              const isAlreadyInHistory = historyData.some(dbMsg => 
+                dbMsg.id === localMsg.id || 
+                (dbMsg.role === localMsg.role && dbMsg.content === localMsg.content)
+              );
+
+              return !isAlreadyInHistory;
+            });
+
+            // Combine history from DB with any truly unique local messages
+            return [...historyData, ...ongoingMessages]
+          })
+          setHasHistoryLoaded(true)
         } else if (lastJsonMessage.type === 'stream') {
           const streamData = lastJsonMessage.data as StreamMessage
 
-          setMessages((prev) => {
+          setMessages((prev: HistoryMessage[]) => {
             const newMessages = [...prev]
             const lastMsg = newMessages[newMessages.length - 1]
 
@@ -148,8 +158,8 @@ function RouteComponent() {
 
   // Handle initial prompt from navigation
   useEffect(() => {
-    if (initialPrompt && !initialPromptSent.current && readyState === ReadyState.OPEN) {
-      initialPromptSent.current = true
+    if (initialPrompt && !initialPromptSent && readyState === ReadyState.OPEN && hasHistoryLoaded) {
+      setInitialPromptSent(true)
       const newMessage: HistoryMessage = {
         id: crypto.randomUUID(),
         role: 'user',
@@ -173,7 +183,7 @@ function RouteComponent() {
         docs_refered : []
       }])
     }
-  }, [initialPrompt, readyState])
+  }, [initialPrompt, readyState, hasHistoryLoaded])
 
   const handleSend = () => {
     if (!prompt.trim()) return
@@ -191,7 +201,7 @@ function RouteComponent() {
       docs_refered : []
     }
 
-    setMessages((prev) => [...prev, newMessage, {
+    setMessages((prev: HistoryMessage[]) => [...prev, newMessage, {
       id: crypto.randomUUID(),
       role: 'assistant',
       content: '',
@@ -350,6 +360,7 @@ function RouteComponent() {
                   handleSend()
                 }
               }}
+              disabled={!hasHistoryLoaded}
             />
             <div className="flex items-center justify-between px-4 py-2 bg-muted/30 border-t">
               <div className="flex items-center gap-2">
@@ -362,7 +373,7 @@ function RouteComponent() {
                 size="sm" 
                 className="rounded-xl h-9 px-4 shadow-lg shadow-primary/20 transition-all hover:translate-y-[-1px] active:translate-y-[1px]"
                 onClick={handleSend}
-                disabled={!prompt.trim()}
+                disabled={!prompt.trim() || !hasHistoryLoaded}
               >
                 <span className="mr-2 hidden sm:inline">Send</span>
                 <SendHorizontal className="w-4 h-4" />

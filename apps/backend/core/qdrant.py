@@ -20,7 +20,7 @@ def create_collection():
         client.create_collection(
             collection_name=settings.QDRANT_COLLECTION_NAME,
             vectors_config=VectorParams(
-                size=384,
+                size=2048,
                 distance=Distance.COSINE
             ),
         )

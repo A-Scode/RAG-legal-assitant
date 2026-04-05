@@ -237,7 +237,7 @@ QDRANT_PORT = os.getenv('QDRANT_PORT')
 QDRANT_API_KEY = os.getenv('QDRANT_API_KEY')
 QDRANT_COLLECTION_NAME = "legal_documents"
 
-EMBEDDING_MODEL_ID= "BAAI/bge-small-en-v1.5"
+
 
 
 
@@ -293,3 +293,16 @@ CHANNEL_LAYERS = {
     },
 }
 ASGI_APPLICATION = "core.asgi.application"
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_PORT = (os.getenv('EMAIL_PORT'))
+EMAIL_USE_TLS = True                    # Use TLS encryption
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD') # NOT your login password
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
+
+OPEN_ROUTER_EMBEDDING_KEY=os.getenv('OPEN_ROUTER_EMBEDDING_KEY')
+OPEN_ROUTER_EMBEDDING_URL=os.getenv('OPEN_ROUTER_EMBEDDING_URL')
+OPEN_ROUTER_EMBEDDING_MODEL=os.getenv('OPEN_ROUTER_EMBEDDING_MODEL')

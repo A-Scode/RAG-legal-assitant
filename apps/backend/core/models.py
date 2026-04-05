@@ -77,7 +77,7 @@ class Document(models.Model):
     content = models.TextField(null=True , blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    file = models.FileField(upload_to='documents/',validators=[FileExtensionValidator(['pdf','docx', 'txt'])])
+    file = models.FileField(upload_to='documents/',validators=[FileExtensionValidator(['pdf'])])
     embedding_status = models.CharField(max_length=100 , choices=[("pending" , "pending") , ("embedding" , "embedding") , ("embedding_done" , "embedding_done") , ("embedding_failed" , "embedding_failed")] , default="pending")
     verified = models.BooleanField(default=False)
     

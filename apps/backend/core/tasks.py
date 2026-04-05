@@ -11,6 +11,9 @@ from transformers import AutoTokenizer
 from docling.datamodel.pipeline_options import PdfPipelineOptions
 from docling.datamodel.base_models import InputFormat
 import logging , uuid6
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
 
 logger = logging.getLogger('django')
 
@@ -31,6 +34,7 @@ def chunk_and_store(doc_id: str):
             pipeline_options = PdfPipelineOptions()
             pipeline_options.do_ocr = True
             pipeline_options.do_table_structure = True
+            pipeline_options.accelerator_options.device = "cpu"
 
             converter = DocumentConverter(
                 format_options={
@@ -41,9 +45,15 @@ def chunk_and_store(doc_id: str):
 
             Document.objects.filter(pk=doc.pk).update(content=result.document.export_to_text())
 
-            raw_tokenizer = AutoTokenizer.from_pretrained(settings.EMBEDDING_MODEL_ID)
+            # Use the hosted model's ID for tokenization counts if possible
+            tokenizer_id = settings.OPEN_ROUTER_EMBEDDING_MODEL.split(':')[0]
+            try:
+                raw_tokenizer = AutoTokenizer.from_pretrained(tokenizer_id)
+            except Exception:
+                # Fallback to a standard tokenizer if the hosted model ID is not standard for tokenization
+                raw_tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
 
-            chunker = HybridChunker(max_tokens=384 ,tokenizer=HuggingFaceTokenizer(tokenizer=raw_tokenizer, max_tokens=384))
+            chunker = HybridChunker(max_tokens=384, tokenizer=HuggingFaceTokenizer(tokenizer=raw_tokenizer, max_tokens=384))
             logger.info("chunking document")
             chunks = chunker.chunk(result.document)
             logger.info("document chunked")
@@ -88,3 +98,28 @@ def chunk_and_store(doc_id: str):
         Document.objects.filter(pk=doc.pk).update(embedding_status="embedding_failed")
         logger.error(f"Error embedding document: {e}")
         print(e)
+
+@task
+def send_otp_email_task(email: str, otp: str, otp_type: str):
+    logger.info(f"Task started: Sending {otp_type} OTP to {email}")
+    
+    otp_type_human = otp_type.replace('-', ' ').title()
+    subject = f"Your Legal Assistant Verification Code: {otp}"
+    from_email = settings.DEFAULT_FROM_EMAIL
+    
+    context = {
+        'otp': otp,
+        'otp_type_human': otp_type_human,
+    }
+    
+    html_content = render_to_string('core/email/otp_email.html', context)
+    text_content = strip_tags(html_content)
+    
+    try:
+        msg = EmailMultiAlternatives(subject, text_content, from_email, [email])
+        msg.attach_alternative(html_content, "text/html")
+        msg.send()
+        logger.info(f"Successfully sent {otp_type} OTP to {email}")
+    except Exception as e:
+        logger.error(f"Error sending OTP email to {email}: {e}")
+        raise e

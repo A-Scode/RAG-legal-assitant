@@ -179,7 +179,7 @@ function RouteComponent() {
                       {sidebarOpen && (
                         <>
                           <div className="flex flex-col min-w-0 flex-1">
-                            <span className="text-sm font-medium truncate">{chat.title}</span>
+                            <span className="text-sm font-medium truncate block max-w-[150px] lg:max-w-[180px]">{chat.title}</span>
                             <span className="text-[10px] text-muted-foreground">{formatRelativeDate(chat.created_at)}</span>
                           </div>
                           <DropdownMenu>

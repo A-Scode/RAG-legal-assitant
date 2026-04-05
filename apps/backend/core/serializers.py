@@ -1,8 +1,9 @@
 from rest_framework import serializers
-from .models import User, OTP , ChatSession, Document
+from .models import User, OTP, ChatSession, Document, ChatMessage, DocumentRefered
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 import random
+from .tasks import send_otp_email_task
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -87,16 +88,30 @@ class GetOTPSerializer(serializers.Serializer):
         return attrs
     
     def create(self , attrs):
-        otp = random.randint(100000, 999999)
+        email = attrs['email']
+        otp_type = attrs['otp_type']
+        user_exists = User.objects.filter(email=email).exists()
+
+        if otp_type == "register" and user_exists:
+            raise serializers.ValidationError({"email": "User with this email already exists"})
+        
+        if otp_type == "forget-password" and not user_exists:
+            raise serializers.ValidationError({"email": "User with this email does not exist"})
+
+        otp = str(random.randint(100000, 999999))
+        
         OTP.objects.create(
-            otp=str(otp),
-            email=attrs['email'],
-            otp_type=attrs['otp_type']
+            otp=otp,
+            email=email,
+            otp_type=otp_type
         )
+        
+        # Trigger background task to send email
+        send_otp_email_task.enqueue(email, otp, otp_type)
+        
         return {
-            "otp": otp,
-            "email": attrs['email'],
-            "otp_type": attrs['otp_type']
+            "email": email,
+            "otp_type": otp_type
         }
 
 class ChatSessionSerializer(serializers.ModelSerializer):

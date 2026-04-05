@@ -77,7 +77,7 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
         return Response(status=204)
 
 class DocumentViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Document.objects.all().order_by("-created_at")
+    queryset = Document.objects.filter(verified=True,embedding_status="embedding_done").order_by("-created_at")
     serializer_class = DocumentSerializer
     permission_classes = [IsAuthenticated]
 
