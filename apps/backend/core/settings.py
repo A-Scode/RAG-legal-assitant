@@ -14,6 +14,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 from datetime import timedelta
+from django.urls import reverse_lazy
 from django.templatetags.static import static
 
 load_dotenv(".env.local")
@@ -170,6 +171,67 @@ UNFOLD = {
     "SIDEBAR": {
         "show_search": True,
         "navigation": [
+            {
+                "title": "Monitoring",
+                "items": [
+                    {
+                        "title": "Monitor System Activity",
+                        "icon": "monitoring",
+                        "link": lambda request: reverse_lazy("monitor_activity"),
+                        "permission": lambda request: request.user.is_staff,
+                    },
+                ],
+            },
+            {
+                "title": "User Management",
+                "items": [
+                    {
+                        "title": "Users",
+                        "icon": "person", 
+                        "link": lambda request: reverse_lazy("admin:core_user_changelist"),
+                    },
+                    {
+                        "title": "OTPs",
+                        "icon": "lock",
+                        "link": lambda request: reverse_lazy("admin:core_otp_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": "Legal Assistant",
+                "items": [
+                    {
+                        "title": "Legal Documents",
+                        "icon": "description",
+                        "link": lambda request: reverse_lazy("admin:core_document_changelist"),
+                    },
+                    {
+                        "title": "Chat Sessions",
+                        "icon": "chat",
+                        "link": lambda request: reverse_lazy("admin:core_chatsession_changelist"),
+                    },
+                    {
+                        "title": "Chat Messages",
+                        "icon": "forum",
+                        "link": lambda request: reverse_lazy("admin:core_chatmessage_changelist"),
+                    },
+                    {
+                        "title": "Document References",
+                        "icon": "history_edu",
+                        "link": lambda request: reverse_lazy("admin:core_documentrefered_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": "Background Tasks",
+                "items": [
+                    {
+                        "title": "Database Tasks",
+                        "icon": "task",
+                        "link": lambda request: reverse_lazy("admin:django_tasks_database_dbtaskresult_changelist"),
+                    },
+                ],
+            },
         ],
     },
     "SITE_FAVICONS": [

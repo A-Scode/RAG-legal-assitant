@@ -1,0 +1,379 @@
+{% extends "unfold/layouts/skeleton.html" %}
+{% load i18n static unfold %}
+
+{% block title %}Monitor System Activity | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block extrastyle %}
+<style>
+    :root {
+        --chart-grid: rgba(229, 231, 235, 0.5);
+        --chart-text: #6b7280;
+    }
+    .dark {
+        --chart-grid: rgba(55, 65, 81, 0.5);
+        --chart-text: #9ca3af;
+    }
+    
+    .stats-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    [x-cloak] { display: none !important; }
+</style>
+{% endblock %}
+
+{% block base %}
+<div id="page" class="flex min-h-screen">
+    {% if not is_popup and is_nav_sidebar_enabled %}
+        {% include "admin/nav_sidebar.html" %}
+    {% endif %}
+
+    <div id="main" class="flex flex-col grow min-w-0 bg-base-50 dark:bg-base-900">
+        {% include "unfold/helpers/header.html" %}
+
+        <div class="p-8 lg:p-12 space-y-16" x-data="{ openUser: null }">
+            <!-- Header section -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                    <h1 class="text-4xl font-black text-font-important-light dark:text-font-important-dark tracking-tight p-5">System Monitor</h1>
+                </div>
+            </div>
+
+            <!-- Stats Overview -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 py-8">
+                <!-- User Stats -->
+                <div class="stats-card bg-white dark:bg-base-800 p-8 rounded-[2rem] border border-base-200 dark:border-base-700 shadow-sm hover:shadow-xl">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="p-3 bg-primary-50 dark:bg-primary-900/40 rounded-2xl">
+                            <span class="material-symbols-outlined text-primary-600 dark:text-primary-400 text-3xl">group</span>
+                        </div>
+                        <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-3 py-1 rounded-full">+{{ new_users_7d }} New</span>
+                    </div>
+                    <div class="text-sm font-black text-font-important-light dark:text-font-important-dark uppercase tracking-widest opacity-40">Total Users</div>
+                    <div class="text-5xl font-black text-font-default-light dark:text-font-default-dark mt-2 tracking-tighter">{{ total_users }}</div>
+                </div>
+
+                <!-- Document Stats -->
+                <div class="stats-card bg-white dark:bg-base-800 p-8 rounded-[2rem] border border-base-200 dark:border-base-700 shadow-sm hover:shadow-xl">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="p-3 bg-blue-50 dark:bg-blue-900/40 rounded-2xl">
+                            <span class="material-symbols-outlined text-blue-600 dark:text-blue-400 text-3xl">description</span>
+                        </div>
+                        <span class="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-full">{{ doc_stats.done }} Ready</span>
+                    </div>
+                    <div class="text-sm font-black text-font-important-light dark:text-font-important-dark uppercase tracking-widest opacity-40">Documents</div>
+                    <div class="text-5xl font-black text-font-default-light dark:text-font-default-dark mt-2 tracking-tighter">{{ doc_stats.total }}</div>
+                </div>
+
+                <!-- Chat Stats -->
+                <div class="stats-card bg-white dark:bg-base-800 p-8 rounded-[2rem] border border-base-200 dark:border-base-700 shadow-sm hover:shadow-xl">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="p-3 bg-purple-50 dark:bg-purple-900/40 rounded-2xl">
+                            <span class="material-symbols-outlined text-purple-600 dark:text-purple-400 text-3xl">chat_bubble</span>
+                        </div>
+                        <span class="text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 px-3 py-1 rounded-full">{{ total_sessions }} Sessions</span>
+                    </div>
+                    <div class="text-sm font-black text-font-important-light dark:text-font-important-dark uppercase tracking-widest opacity-40">Messages</div>
+                    <div class="text-5xl font-black text-font-default-light dark:text-font-default-dark mt-2 tracking-tighter">{{ total_messages }}</div>
+                </div>
+
+                <!-- Verified OTPs -->
+                <div class="stats-card bg-white dark:bg-base-800 p-8 rounded-[2rem] border border-base-200 dark:border-base-700 shadow-sm hover:shadow-xl">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="p-3 bg-orange-50 dark:bg-orange-900/40 rounded-2xl">
+                            <span class="material-symbols-outlined text-orange-600 dark:text-orange-400 text-3xl">verified_user</span>
+                        </div>
+                        <span class="text-xs font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 px-3 py-1 rounded-full">{{ otp_success_rate }}% Success</span>
+                    </div>
+                    <div class="text-sm font-black text-font-important-light dark:text-font-important-dark uppercase tracking-widest opacity-40">Verified OTPs</div>
+                    <div class="text-5xl font-black text-font-default-light dark:text-font-default-dark mt-2 tracking-tighter">{{ verified_otps }}</div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 px-2">
+                <!-- Activity Chart -->
+                <div class="bg-white dark:bg-base-800 p-10 rounded-[2.5rem] border border-base-200 dark:border-base-700 shadow-xl">
+                    <h3 class="text-2xl font-black text-font-important-light dark:text-font-important-dark mb-10 flex items-center gap-3">
+                        <span class="material-symbols-outlined text-primary-500">trending_up</span>
+                        Platform Engagement
+                    </h3>
+                    <div id="activityChart" class="w-full"></div>
+                </div>
+
+                <!-- Status Chart -->
+                <div class="bg-white dark:bg-base-800 p-10 rounded-[2.5rem] border border-base-200 dark:border-base-700 shadow-xl">
+                    <h3 class="text-2xl font-black text-font-important-light dark:text-font-important-dark mb-10 flex items-center gap-3">
+                        <span class="material-symbols-outlined text-indigo-500">donut_large</span>
+                        Document Health
+                    </h3>
+                    <div id="statusChart" class="w-full flex justify-center"></div>
+                </div>
+            </div>
+
+            <!-- User Statistics Table Section -->
+            <div class="bg-white dark:bg-base-800 rounded-[3rem] border border-base-200 dark:border-base-700 shadow-2xl overflow-hidden mt-12">
+                <div class="p-12 border-b border-base-100 dark:border-base-700 bg-base-50/50 dark:bg-base-900/30">
+                    <h3 class="text-3xl font-black text-font-important-light dark:text-font-important-dark flex items-center gap-4">
+                        <span class="material-symbols-outlined text-primary-500 text-4xl">analytics</span>
+                        User Engagement Leaderboard
+                    </h3>
+                    <p class="text-lg text-font-default-light dark:text-font-default-dark mt-3 opacity-60">Deep-dive into individual user activity and message trends.</p>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-base-50/30 dark:bg-base-900/40 border-b border-base-100 dark:border-base-700">
+                                <th class="px-12 py-8 text-sm font-black text-font-default-light dark:text-font-default-dark uppercase tracking-widest opacity-50">User Profile</th>
+                                <th class="px-12 py-8 text-sm font-black text-font-default-light dark:text-font-default-dark uppercase tracking-widest opacity-50">Usage</th>
+                                <th class="px-12 py-8 text-sm font-black text-font-default-light dark:text-font-default-dark uppercase tracking-widest opacity-50">Activity</th>
+                                <th class="px-12 py-8 text-sm font-black text-font-default-light dark:text-font-default-dark uppercase tracking-widest opacity-50 text-right">Details</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-base-100 dark:divide-base-700">
+                            {% for user in user_statistics %}
+                            <tr 
+                                class="hover:bg-primary-50/50 dark:hover:bg-primary-900/10 cursor-pointer transition-all duration-300 group"
+                                @click="openUser === '{{ user.id }}' ? openUser = null : openUser = '{{ user.id }}'; $nextTick(() => { if(openUser === '{{ user.id }}') initUserChart('{{ user.id }}', {{ user.daily_history }}) })"
+                            >
+                                <td class="px-12 py-10">
+                                    <div class="flex items-center gap-6">
+                                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-indigo-600 flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-primary-500/30">
+                                            {{ user.username|first|upper }}
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <span class="text-xl font-black text-font-important-light dark:text-font-important-dark">{{ user.username }}</span>
+                                            <span class="text-sm text-font-default-light dark:text-font-default-dark opacity-40">{{ user.email }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-12 py-10">
+                                    <div class="flex gap-8">
+                                        <div class="flex flex-col">
+                                            <span class="text-2xl font-black text-font-important-light dark:text-font-important-dark">{{ user.msg_count }}</span>
+                                            <span class="text-xs font-bold uppercase tracking-tighter opacity-40">Messages</span>
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <span class="text-2xl font-black text-font-important-light dark:text-font-important-dark">{{ user.sess_count }}</span>
+                                            <span class="text-xs font-bold uppercase tracking-tighter opacity-40">Sessions</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-12 py-10">
+                                    <div class="inline-flex items-center px-4 py-2 bg-emerald-100/50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 rounded-2xl text-xs font-black ring-1 ring-inset ring-emerald-600/20">
+                                        Last active {{ user.last_login|timesince }} ago
+                                    </div>
+                                </td>
+                                <td class="px-12 py-10 text-right">
+                                    <span class="material-symbols-outlined text-primary-500 text-3xl transform transition-transform duration-500" :class="openUser === '{{ user.id }}' ? 'rotate-180' : ''">keyboard_arrow_down</span>
+                                </td>
+                            </tr>
+                            <!-- Accordion Expanded -->
+                            <tr x-show="openUser === '{{ user.id }}'" x-collapse x-cloak class="bg-base-50/50 dark:bg-base-900/50">
+                                <td colspan="4" class="px-16 py-16">
+                                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-16 items-start">
+                                        <div class="xl:col-span-1 space-y-8">
+                                            <div class="bg-white dark:bg-base-800 p-10 rounded-[2.5rem] border border-base-200 dark:border-base-700 shadow-xl relative overflow-hidden">
+                                                <h4 class="text-2xl font-black text-font-important-light dark:text-font-important-dark mb-8">User Intelligence</h4>
+                                                <div class="space-y-6">
+                                                    <div class="flex justify-between items-center pb-4 border-b border-base-100 dark:border-base-700">
+                                                        <span class="text-sm font-bold opacity-40 uppercase tracking-[0.2em]">Platform Rank</span>
+                                                        <span class="font-black text-primary-600 dark:text-primary-400">{{ user.engagement_level }}</span>
+                                                    </div>
+                                                    <div class="flex justify-between items-center pb-4 border-b border-base-100 dark:border-base-700">
+                                                        <span class="text-sm font-bold opacity-40 uppercase tracking-[0.2em]">Retention</span>
+                                                        <span class="font-black text-emerald-600 dark:text-emerald-400">{{ user.retention_status }}</span>
+                                                    </div>
+                                                </div>
+                                                <div class="mt-12 flex flex-col gap-4">
+                                                    <a href="/admin/core/user/{{ user.id }}/change/" class="w-full py-5 bg-primary-600 hover:bg-primary-700 text-white rounded-2xl text-center font-black transition-all shadow-xl shadow-primary-500/20 flex items-center justify-center gap-3">
+                                                        <span class="material-symbols-outlined">edit</span> Modify Profile
+                                                    </a>
+                                                    <a href="/admin/core/chatsession/?user__id__exact={{ user.id }}" class="w-full py-5 border-2 border-primary-600 text-primary-600 dark:text-primary-400 rounded-2xl text-center font-black hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all flex items-center justify-center gap-3">
+                                                        <span class="material-symbols-outlined">history</span> Chat Logs
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="xl:col-span-2 space-y-6">
+                                            <div class="flex items-center justify-between px-4">
+                                                <h4 class="text-xl font-black text-font-important-light dark:text-font-important-dark flex items-center gap-3">
+                                                    <span class="material-symbols-outlined text-primary-500">show_chart</span>
+                                                    Activity Density (7 Days)
+                                                </h4>
+                                            </div>
+                                            <div class="bg-white dark:bg-base-800 p-8 rounded-[3rem] border border-base-200 dark:border-base-700 shadow-2xl relative overflow-hidden">
+                                                <div :id="'userChart_' + '{{ user.id }}'" style="min-height: 320px;"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+    let activityChart, docChart;
+    const userCharts = {};
+
+    const getMode = () => document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    const getTextColor = () => getMode() === 'dark' ? '#9ca3af' : '#6b7280';
+    const getGridColor = () => getMode() === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+
+    function initUserChart(userId, data) {
+        const chartId = 'userChart_' + userId;
+        const container = document.getElementById(chartId);
+        if (!container || userCharts[userId]) return;
+
+        const options = {
+            series: [{ name: 'Messages', data: data }],
+            chart: {
+                type: 'area',
+                height: 320,
+                sparkline: { enabled: false },
+                toolbar: { show: false },
+                background: 'transparent',
+                fontFamily: 'Inter, sans-serif'
+            },
+            stroke: { curve: 'smooth', width: 4 },
+            fill: {
+                type: 'gradient',
+                gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.1, stops: [0, 90, 100] }
+            },
+            colors: ['#4f46e5'],
+            xaxis: {
+                categories: {{ chart_daily_labels|safe }},
+                labels: { show: false },
+                axisBorder: { show: false },
+                axisTicks: { show: false }
+            },
+            yaxis: { show: false },
+            grid: { show: false },
+            theme: { mode: getMode() },
+            tooltip: { 
+                theme: getMode(),
+                style: { fontSize: '13px' },
+                x: { show: true }
+            }
+        };
+
+        const chart = new ApexCharts(container, options);
+        chart.render();
+        userCharts[userId] = chart;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Platform Activity Chart
+        const activityOptions = {
+            series: [{ name: 'System Total', data: {{ chart_daily_messages|safe }} }],
+            chart: {
+                height: 380,
+                type: 'area',
+                toolbar: { show: false },
+                background: 'transparent',
+                fontFamily: 'Inter, sans-serif'
+            },
+            colors: ['#6366f1'],
+            stroke: { curve: 'smooth', width: 5 },
+            grid: { borderColor: getGridColor(), strokeDashArray: 4 },
+            xaxis: {
+                categories: {{ chart_daily_labels|safe }},
+                labels: { style: { colors: getTextColor(), fontWeight: 700 } },
+                axisBorder: { show: false },
+                axisTicks: { show: false }
+            },
+            yaxis: {
+                labels: { style: { colors: getTextColor(), fontWeight: 700 } }
+            },
+            theme: { mode: getMode() },
+            tooltip: { theme: getMode() }
+        };
+        activityChart = new ApexCharts(document.querySelector("#activityChart"), activityOptions);
+        activityChart.render();
+
+        // Document Donut Chart
+        const docOptions = {
+            series: [{{ doc_stats.done }}, {{ doc_stats.pending }}, {{ doc_stats.embedding }}, {{ doc_stats.failed }}],
+            chart: {
+                height: 380,
+                type: 'donut',
+                background: 'transparent'
+            },
+            labels: ['Ready', 'Pending', 'Processing', 'Failed'],
+            colors: ['#10b981', '#f59e0b', '#6366f1', '#ef4444'],
+            legend: {
+                position: 'bottom',
+                labels: { colors: getTextColor(), useSeriesColors: false, fontWeight: 700 }
+            },
+            stroke: { show: false },
+            theme: { mode: getMode() },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '88%',
+                        labels: {
+                            show: true,
+                            name: { show: true, color: getTextColor(), fontSize: '16px', fontWeight: 700 },
+                            value: { show: true, color: getTextColor(), fontSize: '32px', fontWeight: 900 },
+                            total: { show: true, label: 'FILES', color: getTextColor(), fontWeight: 700 }
+                        }
+                    }
+                }
+            }
+        };
+        docChart = new ApexCharts(document.querySelector("#statusChart"), docOptions);
+        docChart.render();
+
+        // Global Theme Observer
+        const observer = new MutationObserver(() => {
+            const mode = getMode();
+            const color = getTextColor();
+            const grid = getGridColor();
+
+            const commonUpdates = {
+                theme: { mode },
+                xaxis: { labels: { style: { colors: color } } },
+                yaxis: { labels: { style: { colors: color } } },
+                grid: { borderColor: grid },
+                legend: { labels: { colors: color } },
+                tooltip: { theme: mode }
+            };
+
+            activityChart.updateOptions(commonUpdates);
+            docChart.updateOptions({
+                ...commonUpdates,
+                plotOptions: { pie: { donut: { labels: { name: { color: color }, value: { color: color }, total: { color: color } }}}}
+            });
+            
+            Object.values(userCharts).forEach(chart => {
+                chart.updateOptions({ theme: { mode }, tooltip: { theme: mode } });
+            });
+        });
+
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    });
+</script>
+
+<style>
+    .material-symbols-outlined { vertical-align: middle; }
+    
+    /* Premium scrollbar */
+    .overflow-x-auto::-webkit-scrollbar { height: 8px; }
+    .overflow-x-auto::-webkit-scrollbar-track { background: transparent; }
+    .overflow-x-auto::-webkit-scrollbar-thumb { 
+        background: rgba(0,0,0,0.1); 
+        border-radius: 20px; 
+        border: 2px solid transparent; 
+        background-clip: padding-box;
+    }
+    .dark .overflow-x-auto::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+</style>
+{% endblock %}

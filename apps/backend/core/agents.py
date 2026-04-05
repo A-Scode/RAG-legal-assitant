@@ -7,7 +7,7 @@ from langchain_community.tools import DuckDuckGoSearchRun
 from .models import User, Document, DocumentRefered
 from channels.db import database_sync_to_async
 from typing import TypedDict, Annotated, List, Dict, Any, Required, NotRequired, Sequence
-from langchain_core.messages import BaseMessage, AnyMessage, ToolMessage
+from langchain_core.messages import BaseMessage, AnyMessage, ToolMessage, SystemMessage, HumanMessage
 from langgraph.graph.message import add_messages
 from langgraph.types import Command
 from langgraph.prebuilt import InjectedState
@@ -30,13 +30,13 @@ thinking_model = ChatOpenAI(
 )
 
 response_agent_system_prompt = """
-- You are a helpfullegal assistant AI. \
-- You are given a query and context. \
-- You need to answer the query based on the documents.\
-- You can use tool to retrive documents. by searching in the vector store. **Use keywords to get better results** \
-- You are also provided with a search tool so you can get information from internet, \
-- make sure your answer is correct and mentions the source of the information in consize manner.\
-- you must give answer in Markdown format.\
+- You are a helpful legal assistant AI.
+- Answer the user's query BASED ON the provided context documents and information.
+- A User Profile (location, occupation, etc.) may be provided via a system message; use it to tailor your legal advice to their specific situation (e.g., local state laws).
+- Use tools to retrieve relevant documents from the vector store. **Use keywords for better results**.
+- Use the search tool for current information from the internet.
+- Ensure your answers are accurate and concisely mention the sources.
+- Provide all answers in Markdown format.
 """
 
 
@@ -126,16 +126,28 @@ class UserDetailMiddleware(AgentMiddleware):
     async def abefore_agent(self, state: ResponseAgentState, runtime: Any) -> dict[str, Any] | None:
         config = get_config()
         user_id = config.get("configurable", {}).get("user_id")
+        logger.info(f"UserDetailMiddleware: Fetching details for user_id={user_id}")
         if user_id:
             try:
                 user = await User.objects.aget(id=user_id)
+                user_info = (
+                    f"[CONTEXT: Current User Profile]\n"
+                    f"- Name: {user.first_name} {user.last_name}\n"
+                    f"- Location: {user.city}, {user.state}\n"
+                    f"- Occupation: {user.occupation}\n"
+                    f"- Personal Details: {user.details}\n"
+                    f"Use this profile to localize and personalize your legal assistance."
+                )
+                logger.info(f"UserDetailMiddleware: Successfully fetched details for {user.username}")
                 return {
                     "user_details": {
+                        "name": user.first_name + " " + user.last_name,
                         "state": user.state,
                         "city": user.city,
                         "occupation": user.occupation,
                         "details": user.details
-                    }
+                    },
+                    "messages": [HumanMessage(content=user_info)]
                 }
             except Exception as e:
                 logger.warning(f"Error fetching user {user_id}: {e}")

@@ -183,7 +183,7 @@ function RouteComponent() {
         docs_refered : []
       }])
     }
-  }, [initialPrompt, readyState, hasHistoryLoaded])
+  }, [initialPrompt, readyState, hasHistoryLoaded, initialPromptSent, chatSessionId])
 
   const handleSend = () => {
     if (!prompt.trim()) return

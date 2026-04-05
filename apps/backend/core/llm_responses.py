@@ -19,7 +19,12 @@ async def generate_llm_response(query: str , room_group_name: str , session_id: 
 
     config = {"configurable": {"user_id": user_id, "thread_id": session_id}}
 
-    assistant_message_obj = None
+    # Create user message once at the start
+    await ChatMessage.objects.acreate(
+        session_id = session_id,
+        content = query,
+        role = "user"
+    )
 
     async for event in response_agent.astream_events({
         "input": query,
@@ -30,13 +35,6 @@ async def generate_llm_response(query: str , room_group_name: str , session_id: 
 
         logger.info(f"event: {event}")
 
-        if kind == "on_chat_model_start":
-            await ChatMessage.objects.acreate(
-                session_id = session_id,
-                content = query,
-                role = "user"
-            )
-        
         if kind == "on_chat_model_stream":
             chunk = event["data"]["chunk"]
             content = ""
@@ -86,13 +84,12 @@ async def generate_llm_response(query: str , room_group_name: str , session_id: 
                 "message": message,
             })
     
-        elif kind == "on_chat_model_end":
-            logger.info(f"on_chat_model_end: {event}")
-            assistant_message_obj = await ChatMessage.objects.acreate(
-                session_id = session_id,
-                content = model_reponse_message,
-                role = "assistant"
-            )
+    # Create assistant message once at the end
+    assistant_message_obj = await ChatMessage.objects.acreate(
+        session_id = session_id,
+        content = model_reponse_message,
+        role = "assistant"
+    )
 
     # Get final state to retrieve referred documents
     final_state = await response_agent.aget_state(config)

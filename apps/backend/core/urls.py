@@ -30,7 +30,10 @@ router.register(r'chat-sessions', ChatSessionViewSet, basename='chat-session')
 router.register(r'documents', DocumentViewSet, basename='document')
 
 
+from .admin_views import MonitorSystemActivityView
+
 urlpatterns = [
+    path('admin/monitor-activity/', MonitorSystemActivityView.as_view(), name='monitor_activity'),
     path('admin/', admin.site.urls),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
